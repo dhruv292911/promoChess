@@ -1,20 +1,206 @@
 package com.example.promochess
 
 import android.os.Bundle
+import android.util.Log
+import android.widget.GridLayout
+import android.widget.ImageView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.promochess.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
+
+
+    private val viewModel: ChessBoardViewModel by viewModels()
+    private var sourcePosition: Pair<Int, Int>? = null
+
+    private var soure_valid_move: Pair<Int, Int>? = null
+    private var target_valid_move: Pair<Int, Int>? = null
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+        val activityMainBinding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(activityMainBinding.root)
+
+
+        val chessboardLayout = activityMainBinding.chessboard
+
+        // Calculate the size of each square
+        val squareSize = resources.displayMetrics.widthPixels / 8 // Assuming the screen width is divided into 8 equal parts
+        //val squareSize = 51
+        //log.d()
+        Log.d("squareSize", "$squareSize")
+
+
+        val startingPosition = arrayOf(
+            arrayOf("black_rook", "black_knight", "black_bishop", "black_queen", "black_king", "black_bishop", "black_knight", "black_rook"),
+            arrayOf("black_pawn", "black_pawn", "black_pawn", "black_pawn", "black_pawn", "black_pawn", "black_pawn", "black_pawn"),
+            arrayOf("", "", "", "", "", "", "", ""),
+            arrayOf("", "", "", "", "", "", "", ""),
+            arrayOf("", "", "", "", "", "", "", ""),
+            arrayOf("", "", "", "", "", "", "", ""),
+            arrayOf("white_pawn", "white_pawn", "white_pawn", "white_pawn", "white_pawn", "white_pawn", "white_pawn", "white_pawn"),
+            arrayOf("white_rook", "white_knight", "white_bishop", "white_queen", "white_king", "white_bishop", "white_knight", "white_rook")
+        )
+
+        // Loop to generate 64 ImageViews
+        for (row in 0 until 8) {
+            for (column in 0 until 8) {
+                val square = ImageView(this)
+                square.layoutParams = GridLayout.LayoutParams().apply {
+                    width = squareSize
+                    height = squareSize
+                }
+
+                // Set background color alternatively
+                if ((row + column) % 2 == 0) {
+                    square.setBackgroundColor(resources.getColor(R.color.white))
+                } else {
+                    square.setBackgroundColor(resources.getColor(R.color.light_brown))
+                }
+
+                // Add the appropriate chess piece image
+                val piece = startingPosition[row][column]
+                if (piece.isNotEmpty()) {
+                    val resourceId = when (piece) {
+                        "black_pawn" -> R.drawable.black_pawn
+                        "black_rook" -> R.drawable.black_rook
+                        "black_knight" -> R.drawable.black_knight
+                        "black_bishop" -> R.drawable.black_bishop
+                        "black_queen" -> R.drawable.black_queen
+                        "black_king" -> R.drawable.black_king
+                        "white_pawn" -> R.drawable.white_pawn
+                        "white_rook" -> R.drawable.white_rook
+                        "white_knight" -> R.drawable.white_knight
+                        "white_bishop" -> R.drawable.white_bishop
+                        "white_queen" -> R.drawable.white_queen
+                        "white_king" -> R.drawable.white_king
+                        else -> throw IllegalArgumentException("Invalid piece name: $piece")
+                    }
+                    square.setImageResource(resourceId)
+                }
+
+                // Add the ImageView to the GridLayout
+                chessboardLayout.addView(square)
+
+                // Add OnClickListener to each square
+                square.setOnClickListener {
+                    // Handle click event
+                    // You can use the `row` and `column` variables here to determine which square was clicked
+                    // and perform the necessary actions
+                    // For example:
+                    // Log.d("Chess", "Clicked on square ($row, $column)")
+                    val position = Pair(row, column)
+                    //Log.d("Clicked Square", "Position: $position")
+
+
+
+                    //Call Handle Click to Handle the Move
+                    //1st Click will Check if the right Color piece is clicked
+                    //White turn -> White piece Clicked, Black turn --> Black piece Clicked
+                    handleSquareClick(row, column)
+                }
+            }
+        }
+
+        //viewModel.printChessBoard()
+
+        //viewModel.printRemainingWhitePieces()
+
+        //viewModel.printRemainingBlackPieces()
+
+
+        // Observe the moveUpdated LiveData
+        viewModel.moveUpdated.observe(this) { moveUpdated ->
+            if (moveUpdated) {
+                Log.d("LiveData Received", "moveUpdated Received the LiveData")
+                soure_valid_move?.let { source ->
+                    target_valid_move?.let { target ->
+                        // Update the chessboard display
+                        // Get the source and target positions
+                        Log.d("Updating Display", "Starting Update")
+                        val sourceSquareIndex = soure_valid_move!!.first * 8 + soure_valid_move!!.second
+                        val targetSquareIndex = target_valid_move!!.first * 8 + target_valid_move!!.second
+
+                        // Get the ImageView at the source position and retrieve its image resource
+                        val sourceSquare = chessboardLayout.getChildAt(sourceSquareIndex) as? ImageView
+                        val sourceImageResource = sourceSquare?.drawable // Get the drawable from the source position
+
+                        // Clear the image resource from the source position
+                        sourceSquare?.setImageResource(0)
+
+                        // Get the ImageView at the target position and clear its image resource
+                        val targetSquare = chessboardLayout.getChildAt(targetSquareIndex) as? ImageView
+                        targetSquare?.setImageResource(0)
+
+                        // Set the image resource of the target position to the source image
+                        targetSquare?.setImageDrawable(sourceImageResource)
+                        Log.d("Updating Display", "Finished Update")
+                    }
+                }
+            }
+        }
+
+    }
+
+
+    private fun handleSquareClick(row: Int, column: Int) {
+        if (sourcePosition == null) {
+            // First click, record the source position
+
+            //First Check if click is clicking on actual piece
+            if(viewModel.chessBoard[row][column] != null){
+                val current_clicked_piece = viewModel.chessBoard[row][column]
+
+                //if White Player's turn and clicking on white piece then set source position
+                if(viewModel.white_turn && current_clicked_piece!!.color=="white"){
+                    sourcePosition = Pair(row, column)
+                }
+                //if Black Player's turn and clicking on black piece then set source position
+                else if(!viewModel.white_turn && current_clicked_piece!!.color=="black"){
+                    sourcePosition = Pair(row, column)
+                }
+                //Else you clicked the wrong color piece so keep source position = null
+                else{
+                    val message = if (viewModel.white_turn) "White to Move" else "Black to Move"
+                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                    sourcePosition = null
+                }
+            }
+        }
+        else {
+            // Second click, move the piece from sourcePosition to (row, column)
+            soure_valid_move = sourcePosition
+            target_valid_move = Pair(row,column)
+            viewModel.movePiece(sourcePosition!!, Pair(row, column))
+            // Reset the source position after the move
+
+//            soure_valid_move = sourcePosition
+//            target_valid_move = Pair(row,column)
+
+            sourcePosition = null
         }
     }
+
+
+    // Function to update the GridLayout with the new piece positions
+//    private fun updateChessboardDisplay(source: Pair<Int, Int>, target: Pair<Int, Int>) {
+//        // Get the ImageView at the source position and clear its image resource
+//        val sourceSquareIndex = source.first * 8 + source.second
+//        val sourceSquare = chessboardLayout.getChildAt(sourceSquareIndex) as? ImageView
+//        sourceSquare?.setImageResource(0) // Clear the image resource
+//
+//        // Get the ImageView at the target position and set its new image resource
+//        val targetSquareIndex = target.first * 8 + target.second
+//        val targetSquare = chessboardLayout.getChildAt(targetSquareIndex) as? ImageView
+//        targetSquare?.setImageResource(getPieceResourceForPosition(target))
+//    }
+
+    // Function to get the image resource for a given position on the chessboard
+
 }
