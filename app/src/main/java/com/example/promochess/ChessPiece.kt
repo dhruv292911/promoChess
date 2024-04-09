@@ -10,7 +10,13 @@ class ChessPiece(
 
 
     //"current position on the board", "row # and column #"
-    var position: Pair<Int, Int>
+    var position: Pair<Int, Int>,
+
+
+    // Boolean indicating if the piece has castling rights
+    //By default it will be false for all pieces except kings and rooks on initialization of the game.
+    //Once a king or rook looses castlingRight i.e. it moves from their starting position it will be set to false.
+    var castlingRight: Boolean = false
 
 
 ){

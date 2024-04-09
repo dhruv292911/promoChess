@@ -11,9 +11,17 @@ class ChessBoardViewModel : ViewModel() {
     //boolean to represent which player has the turn currently
     //white player or black player
     var white_turn = true
+
     private val _moveUpdated = MutableLiveData<Boolean>()
     val moveUpdated: LiveData<Boolean>
         get() = _moveUpdated
+
+    // LiveData variables to track castling
+    private val _whiteCastling = MutableLiveData<Boolean>()
+    val whiteCastling: LiveData<Boolean> = _whiteCastling
+
+    private val _blackCastling = MutableLiveData<Boolean>()
+    val blackCastling: LiveData<Boolean> = _blackCastling
 
 
 
@@ -24,11 +32,11 @@ class ChessBoardViewModel : ViewModel() {
             when (row) {
                 0 -> {
                     when (column) {
-                        0, 7 -> ChessPiece("black", "rook", Pair(row, column))
+                        0, 7 -> ChessPiece("black", "rook", Pair(row, column), castlingRight = true)
                         1, 6 -> ChessPiece("black", "knight", Pair(row, column))
                         2, 5 -> ChessPiece("black", "bishop", Pair(row, column))
                         3 -> ChessPiece("black", "queen", Pair(row, column))
-                        4 -> ChessPiece("black", "king", Pair(row, column))
+                        4 -> ChessPiece("black", "king", Pair(row, column), castlingRight = true)
                         else -> null
                     }
                 }
@@ -36,11 +44,11 @@ class ChessBoardViewModel : ViewModel() {
                 6 -> ChessPiece("white", "pawn", Pair(row, column))
                 7 -> {
                     when (column) {
-                        0, 7 -> ChessPiece("white", "rook", Pair(row, column))
+                        0, 7 -> ChessPiece("white", "rook", Pair(row, column), castlingRight = true)
                         1, 6 -> ChessPiece("white", "knight", Pair(row, column))
                         2, 5 -> ChessPiece("white", "bishop", Pair(row, column))
                         3 -> ChessPiece("white", "queen", Pair(row, column))
-                        4 -> ChessPiece("white", "king", Pair(row, column))
+                        4 -> ChessPiece("white", "king", Pair(row, column), castlingRight = true)
                         else -> null
                     }
                 }
@@ -110,7 +118,7 @@ class ChessBoardViewModel : ViewModel() {
 
         //current piece is a king
         else{
-
+            moveKing(sourcePosition, targetPosition)
         }
     }
 
@@ -135,6 +143,13 @@ class ChessBoardViewModel : ViewModel() {
         val index = remainingPieces.indexOfFirst { it.position == sourcePosition }
         if (index != -1) {
             remainingPieces[index].position = targetPosition
+        }
+
+        //Taking away castling rights for king and rook if they still have it
+        if(cur_piece.type == "king" || cur_piece.type == "rook"){
+            if(cur_piece.castlingRight){
+                cur_piece.castlingRight = false
+            }
         }
 
 
@@ -176,6 +191,14 @@ class ChessBoardViewModel : ViewModel() {
         // Remove the captured piece from remaining_pieces of the opposite color
         val remainingOppositePieces = if (cur_piece?.color == "white") remaining_black_pieces else remaining_white_pieces
         remainingOppositePieces.removeIf { it.position == targetPosition }
+
+
+        //Taking away castling rights for king and rook if they still have it
+        if(cur_piece!!.type == "king" || cur_piece.type == "rook"){
+            if(cur_piece.castlingRight){
+                cur_piece.castlingRight = false
+            }
+        }
 
 
         //Updating the player's turn and updating live data so the new state can be displayed in the chess board
@@ -892,6 +915,286 @@ class ChessBoardViewModel : ViewModel() {
             //Capturing an enemy piece that is not the king
             else{
                 capturing_piece_opposite_color(sourcePosition, targetPosition)
+            }
+        }
+    }
+
+    fun moveKing(sourcePosition: Pair<Int, Int>, targetPosition: Pair<Int, Int>){
+
+        val current_piece = chessBoard[sourcePosition.first][sourcePosition.second]
+        val possible_moves_list = mutableListOf<Pair<Int, Int>>()
+        val cur_row = sourcePosition.first
+        val cur_col = sourcePosition.second
+
+
+        //Eight Possible Moves N, S, E, W, NE, NW, SE, SW
+        val N = Pair(cur_row - 1, cur_col)
+        val S = Pair(cur_row + 1, cur_col)
+        val E = Pair(cur_row, cur_col + 1)
+        val W = Pair(cur_row, cur_col - 1)
+
+
+        val NE = Pair(cur_row -1, cur_col + 1)
+        val SE = Pair(cur_row + 1, cur_col + 1)
+        val NW = Pair(cur_row -1, cur_col - 1)
+        val SW = Pair(cur_row + 1, cur_col - 1)
+
+
+        val possibleMoves = listOf(
+            N, S, E, W, NE, SE, NW, SW
+        )
+
+
+        //King is moving to an empty square
+        if(chessBoard[targetPosition.first][targetPosition.second] == null) {
+            // Check if the targetPosition matches any of the possible King moves
+            // If it does update the Game State.
+            if (targetPosition in possibleMoves) {
+                moving_piece_empty_square(sourcePosition, targetPosition)
+            }
+        }
+
+        //King is trying to move to an occupied square: if the colors of the pieces are different then this is a capture attempt.
+        //Make sure you are not capturing the Enemy King
+        else if(chessBoard[targetPosition.first][targetPosition.second] != null){
+            if(targetPosition in possibleMoves && current_piece!!.color != chessBoard[targetPosition.first][targetPosition.second]!!.color && chessBoard[targetPosition.first][targetPosition.second]!!.type != "king"){
+                capturing_piece_opposite_color(sourcePosition, targetPosition)
+            }
+        }
+
+        //Check 4 Special Coordinates/Cases for Special Move: Castling
+        //(White Kingside Castling, White Queenside Castling, Black KingSide Castling, Black QueenSide Castling)
+        //Target Pos will not be in the list of normal moves Above for King Castling
+
+        //White KingSide Castling Pass in SourcePos (7,4) Target Pos (7,6)
+        if (sourcePosition.first == 7 && sourcePosition.second == 4 && targetPosition.first == 7 && targetPosition.second == 6 && current_piece!!.color == "white"){
+            //Checking if the path is empty for the player to castle and there is a white rook in the corner
+            if(chessBoard[7][5] == null && chessBoard[7][6] == null && chessBoard[7][7] != null){
+                if(chessBoard[7][7]!!.color == "white" && chessBoard[7][7]!!.type == "rook"){
+                    if(current_piece.castlingRight && chessBoard[7][7]!!.castlingRight){
+                        special_Move_Castling(sourcePosition, targetPosition)
+                    }
+                }
+            }
+        }
+        //White QueenSide Castling  Pass in SourcePos (7,4) TargetPos (7,2)
+        if (sourcePosition.first == 7 && sourcePosition.second == 4 && targetPosition.first == 7 && targetPosition.second == 2 && current_piece!!.color == "white"){
+            //Checking if the path is empty for the player to castle and there is a white rook in the corner
+            if(chessBoard[7][3] == null && chessBoard[7][2] == null && chessBoard[7][1] == null && chessBoard[7][0] != null){
+                if(chessBoard[7][0]!!.color == "white" && chessBoard[7][0]!!.type == "rook"){
+                    if(current_piece.castlingRight && chessBoard[7][7]!!.castlingRight){
+                        special_Move_Castling(sourcePosition, targetPosition)
+                    }
+                }
+            }
+        }
+
+        //Black KingSide Castling Pass in Source Pos (0,4) Target Pos (0,6)
+        if(sourcePosition.first == 0 && sourcePosition.second == 4 && targetPosition.first == 0 && targetPosition.second == 6 && current_piece!!.color == "black"){
+            //Check if the path is empty for the player to castle and there is a black rook in the corner
+            if(chessBoard[0][5] == null && chessBoard[0][6] == null && chessBoard[0][7] != null){
+                if(chessBoard[0][7]!!.color == "black" && chessBoard[0][7]!!.type == "rook"){
+                    if(current_piece.castlingRight && chessBoard[0][7]!!.castlingRight){
+                        special_Move_Castling(sourcePosition, targetPosition)
+                    }
+                }
+            }
+        }
+
+
+        //Black QueenSide Castling Pass in Source Pos(0, 4) Target Post (0, 2)
+        if (sourcePosition.first == 0 && sourcePosition.second == 4 && targetPosition.first == 0 && targetPosition.second == 2 && current_piece!!.color == "black"){
+            //Checking if the path is empty for the player to castle and there is a white rook in the corner
+            if(chessBoard[0][3] == null && chessBoard[0][2] == null && chessBoard[0][1] == null && chessBoard[0][0] != null){
+                if(chessBoard[0][0]!!.color == "black" && chessBoard[0][0]!!.type == "rook"){
+                    if(current_piece.castlingRight && chessBoard[0][0]!!.castlingRight){
+                        special_Move_Castling(sourcePosition, targetPosition)
+                    }
+                }
+            }
+        }
+
+    }
+
+    fun special_Move_Castling(sourcePosition: Pair<Int, Int>, targetPosition: Pair<Int, Int>){
+
+        //Black King Side Castling
+        if(sourcePosition == Pair(0,4) && targetPosition == Pair(0,6)){
+            val cur_black_king_pos = Pair(0, 4)
+            val cur_black_rook_pos = Pair(0, 7)
+
+            val updated_black_king_pos = Pair(0,6)
+            val updated_black_rook_pos = Pair(0,5)
+
+
+            // Move the black king to the target position in the ChessBoard and set previous position in the ChessBoard to Null
+            chessBoard[updated_black_king_pos.first][updated_black_king_pos.second] = chessBoard[cur_black_king_pos.first][cur_black_king_pos.second]
+            chessBoard[cur_black_king_pos.first][cur_black_king_pos.second] = null
+
+            // Update the position of the black king and castling right property of the black king
+            chessBoard[updated_black_king_pos.first][updated_black_king_pos.second]!!.position = updated_black_king_pos
+            chessBoard[updated_black_king_pos.first][updated_black_king_pos.second]!!.castlingRight = false
+
+            // Move the black rook to the target position
+            chessBoard[updated_black_rook_pos.first][updated_black_rook_pos.second] = chessBoard[cur_black_rook_pos.first][cur_black_rook_pos.second]
+            chessBoard[cur_black_rook_pos.first][cur_black_rook_pos.second] = null
+
+            // Update the position of the black rook and the castling right property of the black rook
+            chessBoard[updated_black_rook_pos.first][updated_black_rook_pos.second]!!.position = updated_black_rook_pos
+            chessBoard[updated_black_rook_pos.first][updated_black_rook_pos.second]!!.castlingRight = false
+
+            // Find and update the position of the king in the list of remaining pieces
+            val blackKingIndex = remaining_black_pieces.indexOfFirst { it.position == cur_black_king_pos }
+            if (blackKingIndex != -1) {
+                remaining_black_pieces[blackKingIndex].position = updated_black_king_pos
+            }
+
+            // Find and update the position of the rook in the list of remaining pieces
+            val blackRookIndex = remaining_black_pieces.indexOfFirst { it.position == cur_black_rook_pos }
+            if (blackRookIndex != -1) {
+                remaining_black_pieces[blackRookIndex].position = updated_black_rook_pos
+            }
+        }
+
+        //Black Queen Side Castling
+        else if(sourcePosition == Pair(0,4) && targetPosition == Pair(0,2)){
+            val cur_black_king_pos = Pair(0, 4)
+            val cur_black_rook_pos = Pair(0, 0)
+
+            val updated_black_king_pos = Pair(0,2)
+            val updated_black_rook_pos = Pair(0,3)
+
+            // Move the black king to the target position
+            chessBoard[updated_black_king_pos.first][updated_black_king_pos.second] = chessBoard[cur_black_king_pos.first][cur_black_king_pos.second]
+            chessBoard[cur_black_king_pos.first][cur_black_king_pos.second] = null
+
+            // Update the position of the black king and castling right property of the black king
+            chessBoard[updated_black_king_pos.first][updated_black_king_pos.second]!!.position = updated_black_king_pos
+            chessBoard[updated_black_king_pos.first][updated_black_king_pos.second]!!.castlingRight = false
+
+            // Move the black rook to the target position
+            chessBoard[updated_black_rook_pos.first][updated_black_rook_pos.second] = chessBoard[cur_black_rook_pos.first][cur_black_rook_pos.second]
+            chessBoard[cur_black_rook_pos.first][cur_black_rook_pos.second] = null
+
+            // Update the position of the black rook and the castling right property of the black rook
+            chessBoard[updated_black_rook_pos.first][updated_black_rook_pos.second]!!.position = updated_black_rook_pos
+            chessBoard[updated_black_rook_pos.first][updated_black_rook_pos.second]!!.castlingRight = false
+
+
+            // Find and update the position of the king in the list of remaining pieces
+            val blackKingIndex = remaining_black_pieces.indexOfFirst { it.position == cur_black_king_pos }
+            if (blackKingIndex != -1) {
+                remaining_black_pieces[blackKingIndex].position = updated_black_king_pos
+            }
+
+            // Find and update the position of the rook in the list of remaining pieces
+            val blackRookIndex = remaining_black_pieces.indexOfFirst { it.position == cur_black_rook_pos }
+            if (blackRookIndex != -1) {
+                remaining_black_pieces[blackRookIndex].position = updated_black_rook_pos
+            }
+        }
+
+        //White King Side Castling
+        else if(sourcePosition == Pair(7,4) && targetPosition == Pair(7,6)){
+            val cur_white_king_pos = Pair(7,4)
+            val cur_white_rook_pos = Pair(7,7)
+
+            val updated_white_king_pos = Pair(7, 6)
+            val updated_white_rook_pos = Pair(7, 5)
+
+            // Move the white king to the target position
+            chessBoard[updated_white_king_pos.first][updated_white_king_pos.second] = chessBoard[cur_white_king_pos.first][cur_white_king_pos.second]
+            chessBoard[cur_white_king_pos.first][cur_white_king_pos.second] = null
+
+            // Update the position of the white king and the castling right of the white king
+            chessBoard[updated_white_king_pos.first][updated_white_king_pos.second]!!.position = updated_white_king_pos
+            chessBoard[updated_white_king_pos.first][updated_white_king_pos.second]!!.castlingRight = false
+
+            // Move the white rook to the target position
+            chessBoard[updated_white_rook_pos.first][updated_white_rook_pos.second] = chessBoard[cur_white_rook_pos.first][cur_white_rook_pos.second]
+            chessBoard[cur_white_rook_pos.first][cur_white_rook_pos.second] = null
+
+            // Update the position of the white rook and the castling right of the white rook
+            chessBoard[updated_white_rook_pos.first][updated_white_rook_pos.second]!!.position = updated_white_rook_pos
+            chessBoard[updated_white_rook_pos.first][updated_white_rook_pos.second]!!.castlingRight = false
+
+
+            // Find and update the position of the king in the list of remaining pieces
+            val whiteKingIndex = remaining_white_pieces.indexOfFirst { it.position == cur_white_king_pos }
+            if (whiteKingIndex != -1) {
+                remaining_white_pieces[whiteKingIndex].position = updated_white_king_pos
+            }
+
+            // Find and update the position of the rook in the list of remaining pieces
+            val whiteRookIndex = remaining_white_pieces.indexOfFirst { it.position == cur_white_rook_pos }
+            if (whiteRookIndex != -1) {
+                remaining_white_pieces[whiteRookIndex].position = updated_white_rook_pos
+            }
+
+        }
+
+        //White Queen Side Castling Pair(7,4) && targetPost == (7,2)
+        else{
+            val cur_white_king_pos = Pair(7, 4)
+            val cur_white_rook_pos = Pair(7, 0)
+
+            val updated_white_king_pos = Pair(7, 2)
+            val updated_white_rook_pos = Pair(7, 3)
+
+
+            // Move the white king to the target position
+            chessBoard[updated_white_king_pos.first][updated_white_king_pos.second] = chessBoard[cur_white_king_pos.first][cur_white_king_pos.second]
+            chessBoard[cur_white_king_pos.first][cur_white_king_pos.second] = null
+
+            // Update the position of the white king and the castlingRight of the white king
+            chessBoard[updated_white_king_pos.first][updated_white_king_pos.second]!!.position = updated_white_king_pos
+            chessBoard[updated_white_king_pos.first][updated_white_king_pos.second]!!.castlingRight = false
+
+            // Move the white rook to the target position
+            chessBoard[updated_white_rook_pos.first][updated_white_rook_pos.second] = chessBoard[cur_white_rook_pos.first][cur_white_rook_pos.second]
+            chessBoard[cur_white_rook_pos.first][cur_white_rook_pos.second] = null
+
+            // Update the position of the white rook and the castling right of the white rook
+            chessBoard[updated_white_rook_pos.first][updated_white_rook_pos.second]!!.position = updated_white_rook_pos
+            chessBoard[updated_white_rook_pos.first][updated_white_rook_pos.second]!!.castlingRight = false
+
+
+            // Find and update the position of the king in the list of remaining pieces
+            val whiteKingIndex = remaining_white_pieces.indexOfFirst { it.position == cur_white_king_pos }
+            if (whiteKingIndex != -1) {
+                remaining_white_pieces[whiteKingIndex].position = updated_white_king_pos
+            }
+
+            // Find and update the position of the rook in the list of remaining pieces
+            val whiteRookIndex = remaining_white_pieces.indexOfFirst { it.position == cur_white_rook_pos }
+            if (whiteRookIndex != -1) {
+                remaining_white_pieces[whiteRookIndex].position = updated_white_rook_pos
+            }
+        }
+
+
+
+        //Updating the player's turn
+        if(white_turn){
+            white_turn = false
+
+        }else{
+            white_turn = true
+
+        }
+        // Set castling flags
+        when (sourcePosition) {
+            // Black King Side Castling or Black Queen Side Castling
+            Pair(0, 4) -> {
+                if (targetPosition == Pair(0, 6) || targetPosition == Pair(0, 2)) {
+                    _blackCastling.value = true
+                }
+            }
+            // White King Side Castling or White Queen Side Castling
+            Pair(7, 4) -> {
+                if (targetPosition == Pair(7, 6) || targetPosition == Pair(7, 2)) {
+                    _whiteCastling.value = true
+                }
             }
         }
     }

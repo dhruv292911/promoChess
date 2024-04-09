@@ -123,7 +123,7 @@ class MainActivity : AppCompatActivity() {
                     target_valid_move?.let { target ->
                         // Update the chessboard display
                         // Get the source and target positions
-                        Log.d("Updating Display", "Starting Update")
+                        //Log.d("Updating Display", "Starting Update")
                         val sourceSquareIndex = soure_valid_move!!.first * 8 + soure_valid_move!!.second
                         val targetSquareIndex = target_valid_move!!.first * 8 + target_valid_move!!.second
 
@@ -140,12 +140,149 @@ class MainActivity : AppCompatActivity() {
 
                         // Set the image resource of the target position to the source image
                         targetSquare?.setImageDrawable(sourceImageResource)
-                        Log.d("Updating Display", "Finished Update")
+                        //Log.d("Updating Display", "Finished Update")
                     }
                 }
             }
         }
+        // Observe white castling LiveData
+        viewModel.whiteCastling.observe(this) { castling ->
+            if (castling) {
+                soure_valid_move?.let { source ->
+                    target_valid_move?.let { target ->
+                        //Below handles the case for the King based on source and target
+                        val sourceSquareIndex = soure_valid_move!!.first * 8 + soure_valid_move!!.second
+                        val targetSquareIndex = target_valid_move!!.first * 8 + target_valid_move!!.second
 
+                        // Get the ImageView at the source position and retrieve its image resource
+                        val sourceSquare = chessboardLayout.getChildAt(sourceSquareIndex) as? ImageView
+                        val sourceImageResource = sourceSquare?.drawable // Get the drawable from the source position
+
+                        // Clear the image resource from the source position
+                        sourceSquare?.setImageResource(0)
+
+                        // Get the ImageView at the target position and clear its image resource
+                        val targetSquare = chessboardLayout.getChildAt(targetSquareIndex) as? ImageView
+                        targetSquare?.setImageResource(0)
+
+                        // Set the image resource of the target position to the source image
+                        targetSquare?.setImageDrawable(sourceImageResource)
+                        //Log.d("Updating Display", "Finished Update")
+
+
+                        //Now we need to do similar for the rook
+                        //King side Castling Rook Source(7,7) Rook Target (7,5)
+                        if(target_valid_move==Pair(7,6)){
+                            val sourceSquareIndexRook = 7 * 8 + 7
+                            val targetSquareIndexRook = 7 * 8 + 5
+
+                            // Get the ImageView at the source position and retrieve its image resource
+                            val src_sqrook = chessboardLayout.getChildAt(sourceSquareIndexRook) as? ImageView
+                            val src_ImgResource = src_sqrook?.drawable
+
+                            // Clear the image resource from the source position
+                            src_sqrook?.setImageResource(0)
+
+                            // Get the ImageView at the target position and clear its image resource
+                            val target_sqrook = chessboardLayout.getChildAt(targetSquareIndexRook) as? ImageView
+                            target_sqrook?.setImageResource(0)
+
+                            // Set the image resource of the target position to the source image
+                            target_sqrook?.setImageDrawable(src_ImgResource)
+
+                        }
+                        //Queen side Castling Rook Source (7,0) Rook Target(7, 3)
+                        else{
+                            val sourceSquareIndexRook = 7 * 8 + 0
+                            val targetSquareIndexRook = 7 * 8 + 3
+
+                            // Get the ImageView at the source position and retrieve its image resource
+                            val src_sqrook = chessboardLayout.getChildAt(sourceSquareIndexRook) as? ImageView
+                            val src_ImgResource = src_sqrook?.drawable
+
+                            // Clear the image resource from the source position
+                            src_sqrook?.setImageResource(0)
+
+                            // Get the ImageView at the target position and clear its image resource
+                            val target_sqrook = chessboardLayout.getChildAt(targetSquareIndexRook) as? ImageView
+                            target_sqrook?.setImageResource(0)
+
+                            // Set the image resource of the target position to the source image
+                            target_sqrook?.setImageDrawable(src_ImgResource)
+                        }
+                    }
+                }
+            }
+        }
+        // Observe black castling LiveData
+        viewModel.blackCastling.observe(this) { castling ->
+            if (castling) {
+                soure_valid_move?.let { source ->
+                    target_valid_move?.let { target ->
+                        //Below handles the case for the King based on source and target
+                        val sourceSquareIndex = soure_valid_move!!.first * 8 + soure_valid_move!!.second
+                        val targetSquareIndex = target_valid_move!!.first * 8 + target_valid_move!!.second
+
+                        // Get the ImageView at the source position and retrieve its image resource
+                        val sourceSquare = chessboardLayout.getChildAt(sourceSquareIndex) as? ImageView
+                        val sourceImageResource = sourceSquare?.drawable // Get the drawable from the source position
+
+                        // Clear the image resource from the source position
+                        sourceSquare?.setImageResource(0)
+
+                        // Get the ImageView at the target position and clear its image resource
+                        val targetSquare = chessboardLayout.getChildAt(targetSquareIndex) as? ImageView
+                        targetSquare?.setImageResource(0)
+
+                        // Set the image resource of the target position to the source image
+                        targetSquare?.setImageDrawable(sourceImageResource)
+                        //Log.d("Updating Display", "Finished Update")
+
+
+                        //Now we need to do similar for the rook
+                        //King side Castling Rook Source(0,7) Rook Target (0,5)
+                        if(target_valid_move==Pair(0,6)){
+                            val sourceSquareIndexRook = 0 * 8 + 7
+                            val targetSquareIndexRook = 0 * 8 + 5
+
+                            // Get the ImageView at the source position and retrieve its image resource
+                            val src_sqrook = chessboardLayout.getChildAt(sourceSquareIndexRook) as? ImageView
+                            val src_ImgResource = src_sqrook?.drawable
+
+                            // Clear the image resource from the source position
+                            src_sqrook?.setImageResource(0)
+
+                            // Get the ImageView at the target position and clear its image resource
+                            val target_sqrook = chessboardLayout.getChildAt(targetSquareIndexRook) as? ImageView
+                            target_sqrook?.setImageResource(0)
+
+                            // Set the image resource of the target position to the source image
+                            target_sqrook?.setImageDrawable(src_ImgResource)
+
+                        }
+                        //Queen side Castling Rook Source (0,0) Rook Target(0, 3)
+                        else{
+                            val sourceSquareIndexRook = 0 * 8 + 0
+                            val targetSquareIndexRook = 0 * 8 + 3
+
+                            // Get the ImageView at the source position and retrieve its image resource
+                            val src_sqrook = chessboardLayout.getChildAt(sourceSquareIndexRook) as? ImageView
+                            val src_ImgResource = src_sqrook?.drawable
+
+                            // Clear the image resource from the source position
+                            src_sqrook?.setImageResource(0)
+
+                            // Get the ImageView at the target position and clear its image resource
+                            val target_sqrook = chessboardLayout.getChildAt(targetSquareIndexRook) as? ImageView
+                            target_sqrook?.setImageResource(0)
+
+                            // Set the image resource of the target position to the source image
+                            target_sqrook?.setImageDrawable(src_ImgResource)
+                        }
+                    }
+                }
+            }
+        }
     }
 
 
