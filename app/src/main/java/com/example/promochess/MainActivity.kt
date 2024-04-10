@@ -283,6 +283,51 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+
+        viewModel.isPawnPromotion.observe(this) { isPawnPromotion ->
+            if (isPawnPromotion) {
+                soure_valid_move?.let { source ->
+                    target_valid_move?.let { target ->
+                        // Update the chessboard display
+                        // Get the source and target positions
+                        val sourceSquareIndex = source.first * 8 + source.second
+                        val targetSquareIndex = target.first * 8 + target.second
+
+                        // Get the ImageView at the source position and clear its image resource
+                        val sourceSquare = chessboardLayout.getChildAt(sourceSquareIndex) as? ImageView
+                        sourceSquare?.setImageResource(0)
+
+                        // Get the ImageView at the target position and clear its image resource
+                        val targetSquare = chessboardLayout.getChildAt(targetSquareIndex) as? ImageView
+                        targetSquare?.setImageResource(0)
+
+                        // Display a white piece
+                        if (target.first == 0) {
+                            val new_resourceID = when (target.second) {
+                                0, 7 -> R.drawable.white_rook
+                                1, 6 -> R.drawable.white_knight
+                                2, 5 -> R.drawable.white_bishop
+                                else -> R.drawable.white_queen
+                            }
+                            // Set the image resource of the target position to the promoting piece
+                            targetSquare?.setImageResource(new_resourceID)
+                        }
+                        // Display a black piece
+                        else {
+                            val new_resourceID = when (target.second) {
+                                0, 7 -> R.drawable.black_rook
+                                1, 6 -> R.drawable.black_knight
+                                2, 5 -> R.drawable.black_bishop
+                                else -> R.drawable.black_queen
+                            }
+                            // Set the image resource of the target position to the promoting piece
+                            targetSquare?.setImageResource(new_resourceID)
+                        }
+                    }
+                }
+            }
+        }
     }
 
 

@@ -23,6 +23,13 @@ class ChessBoardViewModel : ViewModel() {
     private val _blackCastling = MutableLiveData<Boolean>()
     val blackCastling: LiveData<Boolean> = _blackCastling
 
+    // MutableLiveData to signal pawn promotion
+    private val _isPawnPromotion = MutableLiveData<Boolean>()
+
+    // LiveData to observe pawn promotion
+    val isPawnPromotion: LiveData<Boolean>
+        get() = _isPawnPromotion
+
 
 
 
@@ -263,7 +270,19 @@ class ChessBoardViewModel : ViewModel() {
             // can jump once, capture diagonal left, capture diagonal right, all leads to promotion as it is in row before promotion (Row 1)
             //Cannot Capture Black King
             else if(sourcePosition.first == 1){
-
+                if(targetPosition == jump_once_position && chessBoard[jump_once_position.first][jump_once_position.second] == null){
+                    specialMove_PromotionBlank(sourcePosition, targetPosition)
+                }
+                else if(targetPosition == capture_right_position && chessBoard[targetPosition.first][targetPosition.second] != null){
+                    if(chessBoard[targetPosition.first][targetPosition.second]!!.color == "black" && chessBoard[targetPosition.first][targetPosition.second]!!.type != "king"){
+                        specialMove_PromotionCapture(sourcePosition, targetPosition)
+                    }
+                }
+                else if(targetPosition == capture_left_position && chessBoard[targetPosition.first][targetPosition.second] != null){
+                    if(chessBoard[targetPosition.first][targetPosition.second]!!.color == "black" && chessBoard[targetPosition.first][targetPosition.second]!!.type != "king"){
+                        specialMove_PromotionCapture(sourcePosition, targetPosition)
+                    }
+                }
             }
             //can only jump once, capture diagonal left, capture diagonal right (Rows 5, 4, 3, 2)
             //Cannot Capture Black King
@@ -330,8 +349,19 @@ class ChessBoardViewModel : ViewModel() {
             // can jump once, capture diagonal left, capture diagonal right, all leads to promotion as it is in row before promotion (Row 6)
             //Cannot Capture White King
             else if(sourcePosition.first == 6){
-
-
+                if(targetPosition == jump_once_position && chessBoard[jump_once_position.first][jump_once_position.second] == null){
+                    specialMove_PromotionBlank(sourcePosition, targetPosition)
+                }
+                else if(targetPosition == capture_right_position && chessBoard[targetPosition.first][targetPosition.second] != null){
+                    if(chessBoard[targetPosition.first][targetPosition.second]!!.color == "white" && chessBoard[targetPosition.first][targetPosition.second]!!.type != "king"){
+                        specialMove_PromotionCapture(sourcePosition, targetPosition)
+                    }
+                }
+                else if(targetPosition == capture_left_position && chessBoard[targetPosition.first][targetPosition.second] != null){
+                    if(chessBoard[targetPosition.first][targetPosition.second]!!.color == "white" && chessBoard[targetPosition.first][targetPosition.second]!!.type != "king"){
+                        specialMove_PromotionCapture(sourcePosition, targetPosition)
+                    }
+                }
             }
 
             //can only jump once, capture diagonal left, capture diagonal right (Rows 5, 4, 3, 2)
@@ -1198,6 +1228,216 @@ class ChessBoardViewModel : ViewModel() {
             }
         }
     }
+
+    fun specialMove_PromotionBlank(sourcePosition: Pair<Int, Int>, targetPosition: Pair<Int, Int>){
+        // Retrieve the current piece at the source position
+        val curPiece = chessBoard[sourcePosition.first][sourcePosition.second]
+
+        // Check the color of the current piece
+        when (curPiece!!.color) {
+            "white" -> {
+                // Remove the piece from the chessboard at the source position
+                chessBoard[sourcePosition.first][sourcePosition.second] = null
+
+                // Find and remove the piece from remaining_white_pieces list
+                val index = remaining_white_pieces.indexOfFirst { it.position == curPiece.position }
+                if (index != -1) {
+                    remaining_white_pieces.removeAt(index)
+                }
+
+                // Create a new piece based on the column of the target position
+                val newPiece = when (targetPosition.second) {
+                    0, 7 -> ChessPiece("white", "rook", targetPosition.first, targetPosition.second)
+                    1, 6 -> ChessPiece("white", "knight", targetPosition.first, targetPosition.second)
+                    2, 5 -> ChessPiece("white", "bishop", targetPosition.first, targetPosition.second)
+                    else -> ChessPiece("white", "queen", targetPosition.first, targetPosition.second)
+                }
+
+                // Set the position of the new piece
+                newPiece.position = targetPosition
+
+                // Update the chessboard at the target position with the new piece
+                chessBoard[targetPosition.first][targetPosition.second] = newPiece
+
+                // Add the new piece to remaining_white_pieces
+                remaining_white_pieces.add(newPiece)
+            }
+            "black" -> {
+                // Remove the piece from the chessboard at the source position
+                chessBoard[sourcePosition.first][sourcePosition.second] = null
+
+                // Find and remove the piece from remaining_black_pieces list
+                val index = remaining_black_pieces.indexOfFirst { it.position == curPiece.position }
+                if (index != -1) {
+                    remaining_black_pieces.removeAt(index)
+                }
+
+                // Create a new piece based on the column of the target position
+                val newPiece = when (targetPosition.second) {
+                    0, 7 -> ChessPiece("black", "rook", targetPosition.first, targetPosition.second)
+                    1, 6 -> ChessPiece("black", "knight", targetPosition.first, targetPosition.second)
+                    2, 5 -> ChessPiece("black", "bishop", targetPosition.first, targetPosition.second)
+                    else -> ChessPiece("black", "queen", targetPosition.first, targetPosition.second)
+                }
+
+                // Set the position of the new piece
+                newPiece.position = targetPosition
+
+                // Update the chessboard at the target position with the new piece
+                chessBoard[targetPosition.first][targetPosition.second] = newPiece
+
+                // Add the new piece to remaining_black_pieces
+                remaining_black_pieces.add(newPiece)
+            }
+        }
+
+        //Updating the player's turn and updating live data so the new state can be displayed in the chess board
+        if(white_turn){
+            white_turn = false
+
+        }
+        else {
+            white_turn = true
+        }
+
+        // Update the MutableLiveData to signal pawn promotion
+        _isPawnPromotion.value = true
+    }
+    fun specialMove_PromotionCapture(sourcePosition: Pair<Int, Int>, targetPosition: Pair<Int, Int>){
+        // Retrieve the current piece at the source position
+        val curPiece = chessBoard[sourcePosition.first][sourcePosition.second]
+
+        // Retrieve the captured piece at the target position
+        val capturedPiece = chessBoard[targetPosition.first][targetPosition.second]
+
+        // Check the color of the current piece
+        when (curPiece!!.color) {
+            "white" -> {
+                // Remove the current piece from the chessboard at the source position
+                chessBoard[sourcePosition.first][sourcePosition.second] = null
+
+                // Remove the captured piece from the chessboard at the target position
+                chessBoard[targetPosition.first][targetPosition.second] = null
+
+                // Find and remove the current piece from remaining_white_pieces list
+                val indexCur =
+                    remaining_white_pieces.indexOfFirst { it.position == curPiece.position }
+                if (indexCur != -1) {
+                    remaining_white_pieces.removeAt(indexCur)
+                }
+
+                // Find and remove the captured piece from remaining_black_pieces list
+                val indexCaptured =
+                    remaining_black_pieces.indexOfFirst { it.position == capturedPiece!!.position }
+                if (indexCaptured != -1) {
+                    remaining_black_pieces.removeAt(indexCaptured)
+                }
+
+                // Create a new piece based on the column of the target position
+                val newPiece = when (targetPosition.second) {
+                    0, 7 -> ChessPiece("white", "rook", targetPosition.first, targetPosition.second)
+                    1, 6 -> ChessPiece(
+                        "white",
+                        "knight",
+                        targetPosition.first,
+                        targetPosition.second
+                    )
+
+                    2, 5 -> ChessPiece(
+                        "white",
+                        "bishop",
+                        targetPosition.first,
+                        targetPosition.second
+                    )
+
+                    else -> ChessPiece(
+                        "white",
+                        "queen",
+                        targetPosition.first,
+                        targetPosition.second
+                    )
+                }
+
+                // Set the position of the new piece
+                newPiece.position = targetPosition
+
+                // Update the chessboard at the target position with the new piece
+                chessBoard[targetPosition.first][targetPosition.second] = newPiece
+
+                // Add the new piece to remaining_white_pieces
+                remaining_white_pieces.add(newPiece)
+            }
+
+            "black" -> {
+                // Remove the current piece from the chessboard at the source position
+                chessBoard[sourcePosition.first][sourcePosition.second] = null
+
+                // Remove the captured piece from the chessboard at the target position
+                chessBoard[targetPosition.first][targetPosition.second] = null
+
+                // Find and remove the current piece from remaining_black_pieces list
+                val indexCur =
+                    remaining_black_pieces.indexOfFirst { it.position == curPiece.position }
+                if (indexCur != -1) {
+                    remaining_black_pieces.removeAt(indexCur)
+                }
+
+                // Find and remove the captured piece from remaining_white_pieces list
+                val indexCaptured =
+                    remaining_white_pieces.indexOfFirst { it.position == capturedPiece!!.position }
+                if (indexCaptured != -1) {
+                    remaining_white_pieces.removeAt(indexCaptured)
+                }
+
+                // Create a new piece based on the column of the target position
+                val newPiece = when (targetPosition.second) {
+                    0, 7 -> ChessPiece("black", "rook", targetPosition.first, targetPosition.second)
+                    1, 6 -> ChessPiece(
+                        "black",
+                        "knight",
+                        targetPosition.first,
+                        targetPosition.second
+                    )
+
+                    2, 5 -> ChessPiece(
+                        "black",
+                        "bishop",
+                        targetPosition.first,
+                        targetPosition.second
+                    )
+
+                    else -> ChessPiece(
+                        "black",
+                        "queen",
+                        targetPosition.first,
+                        targetPosition.second
+                    )
+                }
+
+                // Set the position of the new piece
+                newPiece.position = targetPosition
+
+                // Update the chessboard at the target position with the new piece
+                chessBoard[targetPosition.first][targetPosition.second] = newPiece
+
+                // Add the new piece to remaining_black_pieces
+                remaining_black_pieces.add(newPiece)
+            }
+        }
+
+        //Updating the player's turn and updating live data so the new state can be displayed in the chess board
+        if(white_turn){
+            white_turn = false
+
+        }
+        else {
+            white_turn = true
+        }
+
+        // Update the MutableLiveData to signal pawn promotion
+        _isPawnPromotion.value = true
+    }
+
 
     //Print function to see where all the pieces are currently in the Chess Board.
     fun printChessBoard() {
