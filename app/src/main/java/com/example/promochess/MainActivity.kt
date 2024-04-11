@@ -186,6 +186,8 @@ class MainActivity : AppCompatActivity() {
                         //Increasing move_counter
                         viewModel.move_counter += 1
                         //viewModel.printChessBoard()
+                        //viewModel.printRemainingWhitePieces()
+                        //viewModel.printRemainingBlackPieces()
                     }
                 }
             }
@@ -268,6 +270,8 @@ class MainActivity : AppCompatActivity() {
 
                     //Increasing move_counter
                     viewModel.move_counter += 1
+                    //viewModel.printChessBoard()
+                    //viewModel.printRemainingWhitePieces()
                 }
             }
         }
@@ -349,6 +353,8 @@ class MainActivity : AppCompatActivity() {
 
                     //Increasing move_counter
                     viewModel.move_counter += 1
+                    //viewModel.printChessBoard()
+                    //viewModel.printRemainingBlackPieces()
                 }
             }
         }
@@ -443,6 +449,8 @@ class MainActivity : AppCompatActivity() {
                         //Increasing move_counter
                         viewModel.move_counter += 1
                         //viewModel.printChessBoard()
+                        //viewModel.printRemainingWhitePieces()
+                        //viewModel.printRemainingBlackPieces()
                     }
                 }
             }

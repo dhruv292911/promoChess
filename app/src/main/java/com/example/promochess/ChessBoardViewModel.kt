@@ -159,9 +159,11 @@ class ChessBoardViewModel : ViewModel() {
         // Update piece position in remaining_black_pieces or remaining_white_pieces
         val remainingPieces = if (cur_piece.color == "white") remaining_white_pieces else remaining_black_pieces
         val index = remainingPieces.indexOfFirst { it.position == sourcePosition }
+        //Log.d("Moving Piece Empty Square Index", "$index")
         if (index != -1) {
             remainingPieces[index].position = targetPosition
         }
+        //Log.d("Moving Piece Empty Square Index", "$index")
 
         //Taking away castling rights for king and rook if they still have it
         if(cur_piece.type == "king" || cur_piece.type == "rook"){
@@ -201,9 +203,11 @@ class ChessBoardViewModel : ViewModel() {
         if (cur_piece != null) {
             val remainingPieces = if (cur_piece.color == "white") remaining_white_pieces else remaining_black_pieces
             val index = remainingPieces.indexOfFirst { it.position == sourcePosition }
+            //Log.d("Capturing Piece Opposite Color Index", "$index")
             if (index != -1) {
                 remainingPieces[index].position = targetPosition
             }
+            //Log.d("Capturing Piece Opposite Color Index", "$index")
         }
 
         // Remove the captured piece from remaining_pieces of the opposite color
@@ -1173,6 +1177,7 @@ class ChessBoardViewModel : ViewModel() {
 
             // Find and update the position of the king in the list of remaining pieces
             val blackKingIndex = remaining_black_pieces.indexOfFirst { it.position == cur_black_king_pos }
+            //Log.d("Black King Index in remaining_black_pieces", "$blackKingIndex")
             if (blackKingIndex != -1) {
                 remaining_black_pieces[blackKingIndex].position = updated_black_king_pos
             }
@@ -1246,12 +1251,14 @@ class ChessBoardViewModel : ViewModel() {
             chessBoard[updated_white_rook_pos.first][updated_white_rook_pos.second]!!.position = updated_white_rook_pos
             chessBoard[updated_white_rook_pos.first][updated_white_rook_pos.second]!!.castlingRight = false
 
-
+            //printRemainingWhitePieces()
             // Find and update the position of the king in the list of remaining pieces
             val whiteKingIndex = remaining_white_pieces.indexOfFirst { it.position == cur_white_king_pos }
+            //Log.d("White King Index in remaining_white_pieces", "$whiteKingIndex")
             if (whiteKingIndex != -1) {
                 remaining_white_pieces[whiteKingIndex].position = updated_white_king_pos
             }
+            //printRemainingWhitePieces()
 
             // Find and update the position of the rook in the list of remaining pieces
             val whiteRookIndex = remaining_white_pieces.indexOfFirst { it.position == cur_white_rook_pos }
@@ -1544,19 +1551,21 @@ class ChessBoardViewModel : ViewModel() {
 //        Log.d("Source Piece Position", "Row:${sourcePosition.first} Column: ${sourcePosition.second}")
 //        Log.d("Target Piece Position", "Row ${targetPosition.first} Column: ${targetPosition.second}")
 //        Log.d("Captured Piece Position", "Row: ${capturePosition.first} Column: ${capturePosition.second}")
+
         // Set the captured piece's location in the chessboard to null
         chessBoard[capturePosition.first][capturePosition.second] = null
 
+
         // Remove the captured piece from remaining_white_pieces or remaining_black_pieces
         if (cur_piece?.color == "white") {
-            val index = remaining_white_pieces.indexOfFirst { it.position == captured_piece?.position }
-            if (index != -1) {
-                remaining_white_pieces.removeAt(index)
-            }
-        } else {
             val index = remaining_black_pieces.indexOfFirst { it.position == captured_piece?.position }
             if (index != -1) {
                 remaining_black_pieces.removeAt(index)
+            }
+        } else {
+            val index = remaining_white_pieces.indexOfFirst { it.position == captured_piece?.position }
+            if (index != -1) {
+                remaining_white_pieces.removeAt(index)
             }
         }
 
@@ -1613,6 +1622,7 @@ class ChessBoardViewModel : ViewModel() {
 
     //Print RemainingWhitePieces type and coordinates
     fun printRemainingWhitePieces() {
+        println("Move Counter: $move_counter")
         println("Remaining White Pieces:")
         for (piece in remaining_white_pieces) {
             println("${piece.type}_${piece.color} : ${piece.position}")
@@ -1621,6 +1631,7 @@ class ChessBoardViewModel : ViewModel() {
 
     //Print RemainingBlackPieces type and coordinates
     fun printRemainingBlackPieces() {
+        println("Move Counter: $move_counter")
         println("Remaining Black Pieces:")
         for (piece in remaining_black_pieces) {
             println("${piece.type}_${piece.color} : ${piece.position}")
