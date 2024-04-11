@@ -16,7 +16,11 @@ class ChessPiece(
     // Boolean indicating if the piece has castling rights
     //By default it will be false for all pieces except kings and rooks on initialization of the game.
     //Once a king or rook looses castlingRight i.e. it moves from their starting position it will be set to false.
-    var castlingRight: Boolean = false
+    var castlingRight: Boolean = false,
+
+    //I will set this property when a pawn double jumps to signal that it can possibly be captured
+    //by special move en passant
+    var enpassantMoveFlag: Int = -1 // Default value is -1
 
 
 ){

@@ -1,5 +1,6 @@
 package com.example.promochess
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -11,6 +12,9 @@ class ChessBoardViewModel : ViewModel() {
     //boolean to represent which player has the turn currently
     //white player or black player
     var white_turn = true
+
+    //move_counter to set the em_passant flag when a pawn double jumps
+    var move_counter = 0
 
     private val _moveUpdated = MutableLiveData<Boolean>()
     val moveUpdated: LiveData<Boolean>
@@ -30,6 +34,13 @@ class ChessBoardViewModel : ViewModel() {
     val isPawnPromotion: LiveData<Boolean>
         get() = _isPawnPromotion
 
+
+    // MutableLiveData for en passant flag
+    private val _enPassantFlag = MutableLiveData<Boolean>()
+
+    // Expose LiveData for en passant flag
+    val enPassantFlag: LiveData<Boolean>
+        get() = _enPassantFlag
 
 
 
@@ -245,6 +256,7 @@ class ChessBoardViewModel : ViewModel() {
                 // if you want to jump twice and the path is empty
                 if(targetPosition == jump_twice_position && chessBoard[jump_twice_position.first][jump_twice_position.second] == null && chessBoard[jump_once_position.first][jump_once_position.second] == null){
                     //Pawn Jump Valid update game state
+                    current_piece.enpassantMoveFlag = move_counter
                     moving_piece_empty_square(sourcePosition,targetPosition)
                 }
                 // if you want to jump once and the path is empty
@@ -284,6 +296,50 @@ class ChessBoardViewModel : ViewModel() {
                     }
                 }
             }
+
+            //Check case for special move en passant. White pawn will be in row 3 and neighboring black pawn double jumps in previous turn to row 3
+            else if(sourcePosition.first == 3){
+                //Can't get right and left_neighbor both on the edge of the board
+                //Column 0 and 7 only have 1 neighbor each
+
+                val left_neighbor_pos = Pair(sourcePosition.first, sourcePosition.second - 1)
+                val right_neighbor_pos = Pair(sourcePosition.first, sourcePosition.second + 1)
+
+
+                //if white pawn is in row 3 and targetposition/capture right position match and targetPos is empty then white pawn can move to target after en-passant
+                if(targetPosition == capture_right_position && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!= null && chessBoard[targetPosition.first][targetPosition.second] == null){
+                    //check if right_neighbor is a black_pawn that just double jumped on previous move
+                    if(chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.color == "black" && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.type == "pawn" && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.enpassantMoveFlag == move_counter - 1){
+                        specialMove_enpassant(sourcePosition, targetPosition, right_neighbor_pos)
+                    }
+                }
+                else if(targetPosition == capture_left_position && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second] != null && chessBoard[targetPosition.first][targetPosition.second] == null){
+                    if(chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.color == "black" && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.type == "pawn" && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.enpassantMoveFlag == move_counter - 1){
+                        specialMove_enpassant(sourcePosition, targetPosition, left_neighbor_pos)
+                    }
+                }
+                else{
+                    // if you want to jump once and the path is empty
+                    if(targetPosition == jump_once_position && chessBoard[jump_once_position.first][jump_once_position.second] == null){
+                        //Pawn Jump Valid update game state
+                        moving_piece_empty_square(sourcePosition,targetPosition)
+                    }
+                    // if you want to capture diagonally to the right and there is black piece there that is not black king
+                    else if(targetPosition == capture_right_position && chessBoard[targetPosition.first][targetPosition.second] != null){
+                        if(chessBoard[targetPosition.first][targetPosition.second]!!.color == "black" && chessBoard[targetPosition.first][targetPosition.second]!!.type != "king"){
+                            capturing_piece_opposite_color(sourcePosition, targetPosition)
+                        }
+
+                    }
+                    //if you want to capture diagonally to the left and there is a black piece there that is not black king
+                    else if(targetPosition == capture_left_position && chessBoard[targetPosition.first][targetPosition.second] != null){
+                        if(chessBoard[targetPosition.first][targetPosition.second]!!.color == "black" && chessBoard[targetPosition.first][targetPosition.second]!!.type != "king"){
+                            capturing_piece_opposite_color(sourcePosition, targetPosition)
+                        }
+                    }
+                }
+            }
+
             //can only jump once, capture diagonal left, capture diagonal right (Rows 5, 4, 3, 2)
             //Cannot Capture Black King
             else{
@@ -324,6 +380,7 @@ class ChessBoardViewModel : ViewModel() {
                 // if you want to jump twice and the path is empty
                 if(targetPosition == jump_twice_position && chessBoard[jump_twice_position.first][jump_twice_position.second] == null && chessBoard[jump_once_position.first][jump_once_position.second] == null){
                     //Pawn Jump Valid update game state
+                    current_piece.enpassantMoveFlag = move_counter
                     moving_piece_empty_square(sourcePosition,targetPosition)
                 }
                 // if you want to jump once and the path is empty
@@ -360,6 +417,48 @@ class ChessBoardViewModel : ViewModel() {
                 else if(targetPosition == capture_left_position && chessBoard[targetPosition.first][targetPosition.second] != null){
                     if(chessBoard[targetPosition.first][targetPosition.second]!!.color == "white" && chessBoard[targetPosition.first][targetPosition.second]!!.type != "king"){
                         specialMove_PromotionCapture(sourcePosition, targetPosition)
+                    }
+                }
+            }
+            //Check case for special move en passant. Black pawn will be in row 4 and neighboring white pawn double jumps in previous turn to row 4 to avoid battle
+            //Special Move En-Passant
+            else if(sourcePosition.first == 4)   {
+
+                val left_neighbor_pos = Pair(sourcePosition.first, sourcePosition.second + 1)
+                val right_neighbor_pos = Pair(sourcePosition.first, sourcePosition.second -1)
+
+
+
+                //if black pawn is in row 4 and targetposition/capture right position match and targetPos is empty then black pawn can move to target after en-passant
+                if(targetPosition == capture_right_position && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!= null && chessBoard[targetPosition.first][targetPosition.second] == null){
+                    //check if right_neighbor is a white_pawn that just double jumped on previous move
+                    if(chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.color == "white" && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.type == "pawn" && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.enpassantMoveFlag == move_counter - 1){
+                        specialMove_enpassant(sourcePosition, targetPosition, right_neighbor_pos)
+                    }
+                }
+                else if(targetPosition == capture_left_position && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second] != null && chessBoard[targetPosition.first][targetPosition.second] == null){
+                    if(chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.color == "white" && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.type == "pawn" && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.enpassantMoveFlag == move_counter - 1){
+                        specialMove_enpassant(sourcePosition, targetPosition, left_neighbor_pos)
+                    }
+                }
+                else{
+                    // if you want to jump once and the path is empty
+                    if(targetPosition == jump_once_position && chessBoard[jump_once_position.first][jump_once_position.second] == null){
+                        //Pawn Jump Valid update game state
+                        moving_piece_empty_square(sourcePosition,targetPosition)
+                    }
+                    // if you want to capture diagonally to the right and there is White piece there that is not White king
+                    else if(targetPosition == capture_right_position && chessBoard[targetPosition.first][targetPosition.second] != null){
+                        if(chessBoard[targetPosition.first][targetPosition.second]!!.color == "white" && chessBoard[targetPosition.first][targetPosition.second]!!.type != "king"){
+                            capturing_piece_opposite_color(sourcePosition, targetPosition)
+                        }
+
+                    }
+                    //if you want to capture diagonally to the left and there is a White piece there that is not White king
+                    else if(targetPosition == capture_left_position && chessBoard[targetPosition.first][targetPosition.second] != null){
+                        if(chessBoard[targetPosition.first][targetPosition.second]!!.color == "white" && chessBoard[targetPosition.first][targetPosition.second]!!.type != "king"){
+                            capturing_piece_opposite_color(sourcePosition, targetPosition)
+                        }
                     }
                 }
             }
@@ -1043,7 +1142,6 @@ class ChessBoardViewModel : ViewModel() {
                 }
             }
         }
-
     }
 
     fun special_Move_Castling(sourcePosition: Pair<Int, Int>, targetPosition: Pair<Int, Int>){
@@ -1439,8 +1537,66 @@ class ChessBoardViewModel : ViewModel() {
     }
 
 
+    fun specialMove_enpassant(sourcePosition: Pair<Int, Int>, targetPosition: Pair<Int, Int>, capturePosition: Pair<Int, Int>){
+        val cur_piece = chessBoard[sourcePosition.first][sourcePosition.second]
+        val captured_piece = chessBoard[capturePosition.first][capturePosition.second]
+
+//        Log.d("Source Piece Position", "Row:${sourcePosition.first} Column: ${sourcePosition.second}")
+//        Log.d("Target Piece Position", "Row ${targetPosition.first} Column: ${targetPosition.second}")
+//        Log.d("Captured Piece Position", "Row: ${capturePosition.first} Column: ${capturePosition.second}")
+        // Set the captured piece's location in the chessboard to null
+        chessBoard[capturePosition.first][capturePosition.second] = null
+
+        // Remove the captured piece from remaining_white_pieces or remaining_black_pieces
+        if (cur_piece?.color == "white") {
+            val index = remaining_white_pieces.indexOfFirst { it.position == captured_piece?.position }
+            if (index != -1) {
+                remaining_white_pieces.removeAt(index)
+            }
+        } else {
+            val index = remaining_black_pieces.indexOfFirst { it.position == captured_piece?.position }
+            if (index != -1) {
+                remaining_black_pieces.removeAt(index)
+            }
+        }
+
+        // Set the current location in the ChessBoard to null
+        chessBoard[sourcePosition.first][sourcePosition.second] = null
+
+        // Set the target location in the ChessBoard to the current piece
+        chessBoard[targetPosition.first][targetPosition.second] = cur_piece
+
+        // Update the piece position to the new target location
+        cur_piece?.position = targetPosition
+
+        // Find the curPiece in remaining_white_pieces or remaining_black_pieces and update its position
+        if (cur_piece?.color == "white") {
+            val index = remaining_white_pieces.indexOfFirst { it.position == sourcePosition }
+            if (index != -1) {
+                remaining_white_pieces[index].position = targetPosition
+            }
+        } else {
+            val index = remaining_black_pieces.indexOfFirst { it.position == sourcePosition }
+            if (index != -1) {
+                remaining_black_pieces[index].position = targetPosition
+            }
+        }
+
+        //Updating the player's turn and updating live data so the new state can be displayed in the chess board
+        if(white_turn){
+            white_turn = false
+
+        }else{
+            white_turn = true
+
+        }
+
+        _enPassantFlag.value = true // Set en passant flag to true
+
+    }
     //Print function to see where all the pieces are currently in the Chess Board.
     fun printChessBoard() {
+        println("Move Counter: $move_counter")
         for (row in chessBoard.indices) {
             val rowStringBuilder = StringBuilder()
             for (col in chessBoard[row].indices) {
