@@ -1,189 +1,477 @@
 package com.example.promochess
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 
+class VirtualChessGame {
+    private lateinit var chessBoard: Array<Array<ChessPiece?>>
+    private lateinit var remainingWhitePieces: MutableList<ChessPiece>
+    private lateinit var remainingBlackPieces: MutableList<ChessPiece>
+    private var whiteTurn: Boolean = true
+    private var moveCounter: Int = 0
 
-
-class ChessBoardViewModel : ViewModel() {
-
-    //boolean to represent which player has the turn currently
-    //white player or black player
-    var white_turn = true
-
-    //move_counter to set the em_passant flag when a pawn double jumps
-    var move_counter = 0
-
-    private val _moveUpdated = MutableLiveData<Boolean>()
-    val moveUpdated: LiveData<Boolean>
-        get() = _moveUpdated
-
-    // LiveData variables to track castling
-    private val _whiteCastling = MutableLiveData<Boolean>()
-    val whiteCastling: LiveData<Boolean> = _whiteCastling
-
-    private val _blackCastling = MutableLiveData<Boolean>()
-    val blackCastling: LiveData<Boolean> = _blackCastling
-
-    // MutableLiveData to signal pawn promotion
-    private val _isPawnPromotion = MutableLiveData<Boolean>()
-
-    // LiveData to observe pawn promotion
-    val isPawnPromotion: LiveData<Boolean>
-        get() = _isPawnPromotion
-
-
-    // MutableLiveData for en passant flag
-    private val _enPassantFlag = MutableLiveData<Boolean>()
-
-    // Expose LiveData for en passant flag
-    val enPassantFlag: LiveData<Boolean>
-        get() = _enPassantFlag
-
-
-
-    // Initialize the chessboard
-    val chessBoard = Array(8) { row ->
-        Array<ChessPiece?>(8) { column ->
-            when (row) {
-                0 -> {
-                    when (column) {
-                        0, 7 -> ChessPiece("black", "rook", Pair(row, column), castlingRight = true)
-                        1, 6 -> ChessPiece("black", "knight", Pair(row, column))
-                        2, 5 -> ChessPiece("black", "bishop", Pair(row, column))
-                        3 -> ChessPiece("black", "queen", Pair(row, column))
-                        4 -> ChessPiece("black", "king", Pair(row, column), castlingRight = true)
-                        else -> null
-                    }
-                }
-                1 -> ChessPiece("black", "pawn", Pair(row, column))
-                6 -> ChessPiece("white", "pawn", Pair(row, column))
-                7 -> {
-                    when (column) {
-                        0, 7 -> ChessPiece("white", "rook", Pair(row, column), castlingRight = true)
-                        1, 6 -> ChessPiece("white", "knight", Pair(row, column))
-                        2, 5 -> ChessPiece("white", "bishop", Pair(row, column))
-                        3 -> ChessPiece("white", "queen", Pair(row, column))
-                        4 -> ChessPiece("white", "king", Pair(row, column), castlingRight = true)
-                        else -> null
-                    }
-                }
-                else -> null
-            }
-        }
+    fun initializeGame(
+        initialChessBoard: Array<Array<ChessPiece?>>,
+        initialRemainingWhitePieces: MutableList<ChessPiece>,
+        initialRemainingBlackPieces: MutableList<ChessPiece>,
+        initialWhiteTurn: Boolean,
+        initialMoveCounter: Int
+    ) {
+        chessBoard = initialChessBoard.map { it.clone() }.toTypedArray()
+        remainingWhitePieces = initialRemainingWhitePieces.toList() as MutableList<ChessPiece>
+        remainingBlackPieces = initialRemainingBlackPieces.toList() as MutableList<ChessPiece>
+        whiteTurn = initialWhiteTurn
+        moveCounter = initialMoveCounter
     }
 
-    // Array to store remaining white pieces
-    val remaining_white_pieces = mutableListOf<ChessPiece>()
-
-    // Array to store remaining black pieces
-    val remaining_black_pieces = mutableListOf<ChessPiece>()
-
-    init {
-        // Populate remaining_white_pieces and remaining_black_pieces
-        for (row in chessBoard.indices) {
-            for (col in chessBoard[row].indices) {
-                val piece = chessBoard[row][col]
-                if (piece != null) {
-                    if (piece.color == "white") {
-                        remaining_white_pieces.add(piece)
-                    } else {
-                        remaining_black_pieces.add(piece)
-                    }
-                }
-            }
-        }
-    }
+    fun playMove(sourcePosition: Pair<Int, Int>, targetPosition: Pair<Int, Int>): Boolean {
+        // Implement move logic here
+        // You can access the game state properties directly
+        // Update the game state based on the move
+//        Log.d("Virtual Source Position", "Row #: ${sourcePosition.first} Column#: ${sourcePosition.second}")
+//        Log.d("Virtual Target Position", "Row #: ${targetPosition.first} Column#: ${targetPosition.second}")
 
 
-    fun movePiece(sourcePosition: Pair<Int, Int>, targetPosition: Pair<Int, Int>) {
-        // Add logic to handle the move here
 
-
-        //if you got to here you clicked on the right color piece and current_piece is not null
+//        // Return true if the move is valid, otherwise false
         val current_piece = chessBoard[sourcePosition.first][sourcePosition.second]
-        //Log.d("Current Piece Position", "${current_piece!!.position}")
+//
+        // if current_piece is a pawn
+        if(current_piece!!.type == "pawn"){
+            movePawn(sourcePosition, targetPosition)
+        }
 
-//        val curpiece_stringbuilder = StringBuilder()
-//        curpiece_stringbuilder.append("${current_piece!!.color}_${current_piece.type}")
-//        println(curpiece_stringbuilder.toString())
+        // if current_piece is a knight
+        else if(current_piece.type == "knight"){
+            moveKnight(sourcePosition, targetPosition)
+        }
 
+        //if current piece is a rook
+        else if(current_piece.type == "rook"){
+            moveRook(sourcePosition, targetPosition)
+        }
 
-        // Create deep copies of the chess pieces and other game state properties
-        val copiedChessBoard = chessBoard.map { row ->
-            row.map { piece ->
-                piece?.copy()
-            }.toTypedArray()
-        }.toTypedArray()
+        //if current piece is a bishop
+        else if(current_piece.type == "bishop"){
+            moveBishop(sourcePosition, targetPosition)
+        }
 
-        val copiedRemainingWhitePieces = remaining_white_pieces.map { it.copy() }.toMutableList()
-        val copiedRemainingBlackPieces = remaining_black_pieces.map { it.copy() }.toMutableList()
+        //if current piece is a queen
+        else if(current_piece.type == "queen"){
+            moveQueen(sourcePosition, targetPosition)
+        }
 
-        val copiedIsWhiteTurn = white_turn
-        val copiedMoveCounter = move_counter
+        //current piece is a king
+        else{
+            moveKing(sourcePosition, targetPosition)
+        }
 
-        // Create a new instance of VirtualChessGame
-        val virtualChessGame = VirtualChessGame()
-
-        // Initialize the game state properties in the virtual chess game
-        virtualChessGame.initializeGame(
-            copiedChessBoard,
-            copiedRemainingWhitePieces,
-            copiedRemainingBlackPieces,
-            copiedIsWhiteTurn,
-            copiedMoveCounter
-        )
-
-        // Call the playMove function in the virtual chess game
-        val is_Valid = virtualChessGame.playMove(sourcePosition, targetPosition)
-
+        //printChessBoard()
         //printRemainingWhitePieces()
         //printRemainingBlackPieces()
-        //printChessBoard()
-        if(is_Valid){
-            // if current_piece is a pawn
-            if(current_piece!!.type == "pawn"){
-                //printChessBoard()
-                movePawn(sourcePosition, targetPosition)
-                //printChessBoard()
-            }
 
-            // if current_piece is a knight
-            else if(current_piece.type == "knight"){
-                moveKnight(sourcePosition, targetPosition)
-            }
-
-            //if current piece is a rook
-            else if(current_piece.type == "rook"){
-                moveRook(sourcePosition, targetPosition)
-            }
-
-            //if current piece is a bishop
-            else if(current_piece.type == "bishop"){
-                moveBishop(sourcePosition, targetPosition)
-            }
-
-            //if current piece is a queen
-            else if(current_piece.type == "queen"){
-                moveQueen(sourcePosition, targetPosition)
-            }
-
-            //current piece is a king
-            else{
-                moveKing(sourcePosition, targetPosition)
-            }
+        // Find the position of the current player's king
+        val currentPlayerKingPosition = if (whiteTurn) {
+            remainingWhitePieces.find { it.type == "king" }?.position
+        } else {
+            remainingBlackPieces.find { it.type == "king" }?.position
         }
 
+        val squares_attacked_enemy = all_squares_attacked_by_enemy()
+
+        if(squares_attacked_enemy.contains(currentPlayerKingPosition)){
+            return false
+        }
+
+        return true // Placeholder return value
     }
 
-    //Updates the Game State when a Piece is being moved to an empty square. Gets reference to the piece at source position, sets sourcepos to null, target pos to chess piece, update the piece position to targetpos,
-    //and updates the respective remaining_white_pieces/remaining_black_pieces(array)
 
+    fun all_squares_attacked_by_enemy(): List<Pair<Int, Int>>{
+
+        var squares_attacked = mutableListOf<Pair<Int, Int>>()
+
+        val enemyPieces = if (whiteTurn) remainingBlackPieces else remainingWhitePieces
+
+        for(enemyPiece in enemyPieces){
+           var attacked_squares_cur_piece = mutableListOf<Pair<Int, Int>>()
+           var cur_piece_position = enemyPiece.position
+
+            //if enemey piece is a knight
+            if(enemyPiece.type == "knight"){
+                val up_left_pos = Pair(cur_piece_position.first - 2, cur_piece_position.second - 1)
+                val up_right_pos = Pair(cur_piece_position.first - 2, cur_piece_position.second + 1)
+                val down_right_pos = Pair(cur_piece_position.first + 2, cur_piece_position.second - 1)
+                val down_left_pos = Pair(cur_piece_position.first + 2, cur_piece_position.second + 1)
+                val left_down_pos = Pair(cur_piece_position.first + 1, cur_piece_position.second - 2)
+                val left_up_pos = Pair(cur_piece_position.first -1, cur_piece_position.second - 2)
+                val right_down_pos = Pair(cur_piece_position.first + 1, cur_piece_position.second + 2)
+                val right_up_pos = Pair(cur_piece_position.first -1, cur_piece_position.second + 2)
+
+                val possiblesquares_attackedKnight = listOf(up_left_pos, up_right_pos, down_right_pos, down_left_pos, left_down_pos,
+                    left_up_pos, right_down_pos, right_up_pos )
+
+                attacked_squares_cur_piece.addAll(possiblesquares_attackedKnight)
+
+            }
+            //if enemy piece is a king
+            else if(enemyPiece.type == "king"){
+                val cur_row = cur_piece_position.first
+                val cur_col = cur_piece_position.second
+
+
+                //Eight Possible Moves N, S, E, W, NE, NW, SE, SW
+                val N = Pair(cur_row - 1, cur_col)
+                val S = Pair(cur_row + 1, cur_col)
+                val E = Pair(cur_row, cur_col + 1)
+                val W = Pair(cur_row, cur_col - 1)
+
+
+                val NE = Pair(cur_row -1, cur_col + 1)
+                val SE = Pair(cur_row + 1, cur_col + 1)
+                val NW = Pair(cur_row -1, cur_col - 1)
+                val SW = Pair(cur_row + 1, cur_col - 1)
+
+
+                val possiblesquares_attackedKing = listOf(
+                    N, S, E, W, NE, SE, NW, SW
+                )
+                attacked_squares_cur_piece.addAll(possiblesquares_attackedKing)
+            }
+            // if enemy piece is a pawn
+            else if(enemyPiece.type == "pawn"){
+                val capture_right_position = if(enemyPiece.color == "white") Pair(cur_piece_position.first - 1, cur_piece_position.second + 1) else Pair(cur_piece_position.first + 1, cur_piece_position.second - 1)
+                val capture_left_position = if(enemyPiece.color == "black") Pair(cur_piece_position.first - 1, cur_piece_position.second -1) else Pair(cur_piece_position.first + 1, cur_piece_position.second + 1)
+
+                val possiblesquares_attackedPawn = listOf(capture_left_position, capture_right_position)
+
+                attacked_squares_cur_piece.addAll(possiblesquares_attackedPawn)
+            }
+            // if enemy piece is a bishop
+            else if(enemyPiece.type == "bishop"){
+                val possiblesquares_attackedBishop = mutableListOf<Pair<Int, Int>>()
+
+                val cur_row = cur_piece_position.first
+                val cur_col = cur_piece_position.second
+
+                //NE Direction: Row # decrease, column # increases
+                var row_NE = cur_row - 1
+                var col_NE = cur_col + 1
+
+                while(row_NE >= 0 && col_NE <= 7){
+                    //Next square is a blank space
+                    if(chessBoard[row_NE][col_NE] == null){
+                        possiblesquares_attackedBishop.add(Pair(row_NE, col_NE))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        possiblesquares_attackedBishop.add(Pair(row_NE, col_NE))
+                        break
+                    }
+                    row_NE -= 1
+                    col_NE += 1
+                }
+
+
+                //SE Direction: Row # increases, column # increases
+                var row_SE = cur_row + 1
+                var col_SE = cur_col + 1
+
+                while(row_SE <= 7 && col_SE <= 7){
+                    //Next square is a blank space
+                    if(chessBoard[row_SE][col_SE] == null){
+                        possiblesquares_attackedBishop.add(Pair(row_SE, col_SE))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        possiblesquares_attackedBishop.add(Pair(row_SE, col_SE))
+                        break
+                    }
+                    row_SE += 1
+                    col_SE += 1
+                }
+
+                //NW Direction: Row # decreases, column # decreases
+                var row_NW = cur_row - 1
+                var col_NW = cur_col - 1
+
+                while(row_NW >= 0 && col_NW >= 0){
+                    //Next square is a blank space
+                    if(chessBoard[row_NW][col_NW] == null){
+                        possiblesquares_attackedBishop.add(Pair(row_NW, col_NW))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        possiblesquares_attackedBishop.add(Pair(row_NW, col_NW))
+                        break
+                    }
+                    row_NW -= 1
+                    col_NW -= 1
+                }
+
+
+                //SW Direction: Row # increases, column # decreases
+                var row_SW = cur_row + 1
+                var col_SW = cur_col - 1
+
+                while(row_SW <= 7 && col_SW >=0){
+                    //Next square is a blank space
+                    if(chessBoard[row_SW][col_SW] == null){
+                        possiblesquares_attackedBishop.add(Pair(row_SW, col_SW))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        possiblesquares_attackedBishop.add(Pair(row_SW, col_SW))
+                        break
+                    }
+                    row_SW += 1
+                    col_SW -= 1
+                }
+                attacked_squares_cur_piece.addAll(possiblesquares_attackedBishop)
+            }
+            // if enemy piece is a rook
+            else if(enemyPiece.type == "rook"){
+                val cur_row = cur_piece_position.first
+                val cur_col = cur_piece_position.second
+
+                val possiblesquares_attackedRook = mutableListOf<Pair<Int, Int>>()
+
+                //North Direction (Row # decreases column stays the same)
+                var nextsquare_northrow = cur_row - 1
+
+                //Make Sure while loop condition changes at the end
+                while (nextsquare_northrow >= 0){
+                    //if the next square is empty add to possible move  //(Move to Blank Square)
+                    if(chessBoard[nextsquare_northrow][cur_col] == null){
+                        possiblesquares_attackedRook.add(Pair(nextsquare_northrow, cur_col))
+                    }
+
+                    //if next square is not null I am either attacking enemy piece or defending my own piece. Either way that square should be added and break
+                    else{
+                        possiblesquares_attackedRook.add(Pair(nextsquare_northrow, cur_col))
+                        break
+                    }
+                    nextsquare_northrow -= 1
+                }
+
+                //South Direction
+                var nextsquare_southrow = cur_row + 1
+
+                while(nextsquare_southrow <= 7){
+                    //Next square is blank space
+                    if(chessBoard[nextsquare_southrow][cur_col] == null){
+                        possiblesquares_attackedRook.add(Pair(nextsquare_southrow, cur_col))
+                    }
+                    //if next square is not null I am either attacking enemy piece or defending my own piece. Either way that square should be added and break
+                    else{
+                        possiblesquares_attackedRook.add(Pair(nextsquare_southrow, cur_col))
+                        break
+
+                    }
+                    nextsquare_southrow += 1
+                }
+
+                //West Direction
+                var nextsquare_westcol = cur_col - 1
+
+                while(nextsquare_westcol >= 0){
+                    //Next square is a blank space
+                    if(chessBoard[cur_row][nextsquare_westcol] == null){
+                        possiblesquares_attackedRook.add(Pair(cur_row, nextsquare_westcol))
+                    }
+                    //if next square is not null I am either attacking enemy piece or defending my own piece. Either way that square should be added and break
+                    else{
+                        possiblesquares_attackedRook.add(Pair(cur_row, nextsquare_westcol))
+                        break
+                    }
+                    nextsquare_westcol -= 1
+                }
+
+                //East Direction
+                var nextsquare_eastcol = cur_col + 1
+
+                while(nextsquare_eastcol <= 7){
+                    //Next square is a blank space
+                    if(chessBoard[cur_row][nextsquare_eastcol] == null){
+                        possiblesquares_attackedRook.add(Pair(cur_row, nextsquare_eastcol))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        possiblesquares_attackedRook.add(Pair(cur_row, nextsquare_eastcol))
+                        break
+                    }
+                    nextsquare_eastcol += 1
+                }
+
+                attacked_squares_cur_piece.addAll(possiblesquares_attackedRook)
+            }
+            //enemy piece is a queen
+            else{
+                val possiblesquares_attackedQueen = mutableListOf<Pair<Int, Int>>()
+                val cur_row = cur_piece_position.first
+                val cur_col = cur_piece_position.second
+
+
+                //Queen is a combination of the Bishop and Rook
+                //Rook 4 Paths
+                //North Direction (Row # decreases column stays the same)
+                var nextsquare_northrow = cur_row - 1
+
+                //Make Sure while loop condition changes at the end
+                while (nextsquare_northrow >= 0){
+                    //if the next square is empty add to possible move  //(Move to Blank Square)
+                    if(chessBoard[nextsquare_northrow][cur_col] == null){
+                        possiblesquares_attackedQueen.add(Pair(nextsquare_northrow, cur_col))
+                    }
+
+                    //if next square is not null I am either attacking enemy piece or defending my own piece. Either way that square should be added and break
+                    else{
+                        possiblesquares_attackedQueen.add(Pair(nextsquare_northrow, cur_col))
+                        break
+                    }
+                    nextsquare_northrow -= 1
+                }
+
+                //South Direction
+                var nextsquare_southrow = cur_row + 1
+
+                while(nextsquare_southrow <= 7){
+                    //Next square is blank space
+                    if(chessBoard[nextsquare_southrow][cur_col] == null){
+                        possiblesquares_attackedQueen.add(Pair(nextsquare_southrow, cur_col))
+                    }
+                    //if next square is not null I am either attacking enemy piece or defending my own piece. Either way that square should be added and break
+                    else{
+                        possiblesquares_attackedQueen.add(Pair(nextsquare_southrow, cur_col))
+                        break
+
+                    }
+                    nextsquare_southrow += 1
+                }
+
+                //West Direction
+                var nextsquare_westcol = cur_col - 1
+
+                while(nextsquare_westcol >= 0){
+                    //Next square is a blank space
+                    if(chessBoard[cur_row][nextsquare_westcol] == null){
+                        possiblesquares_attackedQueen.add(Pair(cur_row, nextsquare_westcol))
+                    }
+                    //if next square is not null I am either attacking enemy piece or defending my own piece. Either way that square should be added and break
+                    else{
+                        possiblesquares_attackedQueen.add(Pair(cur_row, nextsquare_westcol))
+                        break
+                    }
+                    nextsquare_westcol -= 1
+                }
+
+                //East Direction
+                var nextsquare_eastcol = cur_col + 1
+
+                while(nextsquare_eastcol <= 7){
+                    //Next square is a blank space
+                    if(chessBoard[cur_row][nextsquare_eastcol] == null){
+                        possiblesquares_attackedQueen.add(Pair(cur_row, nextsquare_eastcol))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        possiblesquares_attackedQueen.add(Pair(cur_row, nextsquare_eastcol))
+                        break
+                    }
+                    nextsquare_eastcol += 1
+                }
+
+                //Queen is a combination of the Bishop and Rook
+                //Bishop 4 Paths
+                //NE Direction: Row # decrease, column # increases
+                var row_NE = cur_row - 1
+                var col_NE = cur_col + 1
+
+                while(row_NE >= 0 && col_NE <= 7){
+                    //Next square is a blank space
+                    if(chessBoard[row_NE][col_NE] == null){
+                        possiblesquares_attackedQueen.add(Pair(row_NE, col_NE))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        possiblesquares_attackedQueen.add(Pair(row_NE, col_NE))
+                        break
+                    }
+                    row_NE -= 1
+                    col_NE += 1
+                }
+
+
+                //SE Direction: Row # increases, column # increases
+                var row_SE = cur_row + 1
+                var col_SE = cur_col + 1
+
+                while(row_SE <= 7 && col_SE <= 7){
+                    //Next square is a blank space
+                    if(chessBoard[row_SE][col_SE] == null){
+                        possiblesquares_attackedQueen.add(Pair(row_SE, col_SE))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        possiblesquares_attackedQueen.add(Pair(row_SE, col_SE))
+                        break
+                    }
+                    row_SE += 1
+                    col_SE += 1
+                }
+
+                //NW Direction: Row # decreases, column # decreases
+                var row_NW = cur_row - 1
+                var col_NW = cur_col - 1
+
+                while(row_NW >= 0 && col_NW >= 0){
+                    //Next square is a blank space
+                    if(chessBoard[row_NW][col_NW] == null){
+                        possiblesquares_attackedQueen.add(Pair(row_NW, col_NW))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        possiblesquares_attackedQueen.add(Pair(row_NW, col_NW))
+                        break
+                    }
+                    row_NW -= 1
+                    col_NW -= 1
+                }
+
+
+                //SW Direction: Row # increases, column # decreases
+                var row_SW = cur_row + 1
+                var col_SW = cur_col - 1
+
+                while(row_SW <= 7 && col_SW >=0){
+                    //Next square is a blank space
+                    if(chessBoard[row_SW][col_SW] == null){
+                        possiblesquares_attackedQueen.add(Pair(row_SW, col_SW))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        possiblesquares_attackedQueen.add(Pair(row_SW, col_SW))
+                        break
+                    }
+                    row_SW += 1
+                    col_SW -= 1
+
+                }
+                attacked_squares_cur_piece.addAll(possiblesquares_attackedQueen)
+            }
+            // Add the calculated attacked squares for the current piece
+            squares_attacked.addAll(attacked_squares_cur_piece.filter {
+                it.first in 0..7 && it.second in 0..7 && !squares_attacked.contains(it)
+            })
+        }
+
+        return squares_attacked
+    }
+
+
+
+    // Other methods for game state manipulation and validation
     fun moving_piece_empty_square(sourcePosition: Pair<Int, Int>, targetPosition: Pair<Int, Int>){
         // Get a reference to the piece at the source position
-        //printChessBoard()
         val cur_piece = chessBoard[sourcePosition.first][sourcePosition.second]
 
         // Set the current location in the ChessBoard to null
@@ -196,7 +484,7 @@ class ChessBoardViewModel : ViewModel() {
         cur_piece!!.position = targetPosition
 
         // Update piece position in remaining_black_pieces or remaining_white_pieces
-        val remainingPieces = if (cur_piece.color == "white") remaining_white_pieces else remaining_black_pieces
+        val remainingPieces = if (cur_piece.color == "white") remainingWhitePieces else remainingBlackPieces
         val index = remainingPieces.indexOfFirst { it.position == sourcePosition }
         //Log.d("Moving Piece Empty Square Index", "$index")
         if (index != -1) {
@@ -211,16 +499,6 @@ class ChessBoardViewModel : ViewModel() {
             }
         }
 
-
-        //Updating the player's turn and updating live data so the new state can be displayed in the chess board
-        if(white_turn){
-            white_turn = false
-
-        }else{
-            white_turn = true
-
-        }
-        _moveUpdated.value = true
     }
 
     //Updates the Game State when a Piece is being captured. Gets reference to the Source Piece from source position at ChessBoard. Sets Current Location to null and target position to Source Piece(thus deleting captured Piece)
@@ -240,7 +518,7 @@ class ChessBoardViewModel : ViewModel() {
 
         // Update piece position in remaining_black_pieces or remaining_white_pieces
         if (cur_piece != null) {
-            val remainingPieces = if (cur_piece.color == "white") remaining_white_pieces else remaining_black_pieces
+            val remainingPieces = if (cur_piece.color == "white") remainingWhitePieces else remainingBlackPieces
             val index = remainingPieces.indexOfFirst { it.position == sourcePosition }
             //Log.d("Capturing Piece Opposite Color Index", "$index")
             if (index != -1) {
@@ -250,7 +528,7 @@ class ChessBoardViewModel : ViewModel() {
         }
 
         // Remove the captured piece from remaining_pieces of the opposite color
-        val remainingOppositePieces = if (cur_piece?.color == "white") remaining_black_pieces else remaining_white_pieces
+        val remainingOppositePieces = if (cur_piece?.color == "white") remainingBlackPieces else remainingWhitePieces
         remainingOppositePieces.removeIf { it.position == targetPosition }
 
 
@@ -260,17 +538,6 @@ class ChessBoardViewModel : ViewModel() {
                 cur_piece.castlingRight = false
             }
         }
-
-
-        //Updating the player's turn and updating live data so the new state can be displayed in the chess board
-        if(white_turn){
-            white_turn = false
-
-        }else{
-            white_turn = true
-
-        }
-        _moveUpdated.value = true
     }
 
 
@@ -279,12 +546,10 @@ class ChessBoardViewModel : ViewModel() {
 
     fun movePawn(sourcePosition: Pair<Int, Int>, targetPosition: Pair<Int, Int>){
         //Source Position comes from the chessboard position and piece is checked for not null in Main Activity
-        //printChessBoard()
         val current_piece = chessBoard[sourcePosition.first][sourcePosition.second]
-        //Log.d("Current Piece Position", "${current_piece!!.position}")
+
         //if cur_piece is white pawn
         if(current_piece!!.color == "white"){
-            //printChessBoard()
 
             val jump_twice_position = Pair(current_piece.position.first -2, current_piece.position.second)
 
@@ -299,15 +564,9 @@ class ChessBoardViewModel : ViewModel() {
             if(sourcePosition.first == 6){
 
                 // if you want to jump twice and the path is empty
-                //printChessBoard()
-//                Log.d("targetPosition", "$targetPosition")
-//                Log.d("jump twice position", "$jump_twice_position")
-//                Log.d("jump once position", "$jump_once_position")
-
                 if(targetPosition == jump_twice_position && chessBoard[jump_twice_position.first][jump_twice_position.second] == null && chessBoard[jump_once_position.first][jump_once_position.second] == null){
                     //Pawn Jump Valid update game state
-                    //printChessBoard()
-                    current_piece.enpassantMoveFlag = move_counter
+                    current_piece.enpassantMoveFlag = moveCounter
                     moving_piece_empty_square(sourcePosition,targetPosition)
                 }
                 // if you want to jump once and the path is empty
@@ -360,12 +619,12 @@ class ChessBoardViewModel : ViewModel() {
                 //if white pawn is in row 3 and targetposition/capture right position match and targetPos is empty then white pawn can move to target after en-passant
                 if(targetPosition == capture_right_position && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!= null && chessBoard[targetPosition.first][targetPosition.second] == null){
                     //check if right_neighbor is a black_pawn that just double jumped on previous move
-                    if(chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.color == "black" && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.type == "pawn" && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.enpassantMoveFlag == move_counter - 1){
+                    if(chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.color == "black" && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.type == "pawn" && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.enpassantMoveFlag == moveCounter - 1){
                         specialMove_enpassant(sourcePosition, targetPosition, right_neighbor_pos)
                     }
                 }
                 else if(targetPosition == capture_left_position && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second] != null && chessBoard[targetPosition.first][targetPosition.second] == null){
-                    if(chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.color == "black" && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.type == "pawn" && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.enpassantMoveFlag == move_counter - 1){
+                    if(chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.color == "black" && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.type == "pawn" && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.enpassantMoveFlag == moveCounter - 1){
                         specialMove_enpassant(sourcePosition, targetPosition, left_neighbor_pos)
                     }
                 }
@@ -431,7 +690,7 @@ class ChessBoardViewModel : ViewModel() {
                 // if you want to jump twice and the path is empty
                 if(targetPosition == jump_twice_position && chessBoard[jump_twice_position.first][jump_twice_position.second] == null && chessBoard[jump_once_position.first][jump_once_position.second] == null){
                     //Pawn Jump Valid update game state
-                    current_piece.enpassantMoveFlag = move_counter
+                    current_piece.enpassantMoveFlag = moveCounter
                     moving_piece_empty_square(sourcePosition,targetPosition)
                 }
                 // if you want to jump once and the path is empty
@@ -483,12 +742,12 @@ class ChessBoardViewModel : ViewModel() {
                 //if black pawn is in row 4 and targetposition/capture right position match and targetPos is empty then black pawn can move to target after en-passant
                 if(targetPosition == capture_right_position && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!= null && chessBoard[targetPosition.first][targetPosition.second] == null){
                     //check if right_neighbor is a white_pawn that just double jumped on previous move
-                    if(chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.color == "white" && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.type == "pawn" && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.enpassantMoveFlag == move_counter - 1){
+                    if(chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.color == "white" && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.type == "pawn" && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.enpassantMoveFlag == moveCounter - 1){
                         specialMove_enpassant(sourcePosition, targetPosition, right_neighbor_pos)
                     }
                 }
                 else if(targetPosition == capture_left_position && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second] != null && chessBoard[targetPosition.first][targetPosition.second] == null){
-                    if(chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.color == "white" && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.type == "pawn" && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.enpassantMoveFlag == move_counter - 1){
+                    if(chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.color == "white" && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.type == "pawn" && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.enpassantMoveFlag == moveCounter - 1){
                         specialMove_enpassant(sourcePosition, targetPosition, left_neighbor_pos)
                     }
                 }
@@ -1223,16 +1482,16 @@ class ChessBoardViewModel : ViewModel() {
             chessBoard[updated_black_rook_pos.first][updated_black_rook_pos.second]!!.castlingRight = false
 
             // Find and update the position of the king in the list of remaining pieces
-            val blackKingIndex = remaining_black_pieces.indexOfFirst { it.position == cur_black_king_pos }
+            val blackKingIndex = remainingBlackPieces.indexOfFirst { it.position == cur_black_king_pos }
             //Log.d("Black King Index in remaining_black_pieces", "$blackKingIndex")
             if (blackKingIndex != -1) {
-                remaining_black_pieces[blackKingIndex].position = updated_black_king_pos
+                remainingBlackPieces[blackKingIndex].position = updated_black_king_pos
             }
 
             // Find and update the position of the rook in the list of remaining pieces
-            val blackRookIndex = remaining_black_pieces.indexOfFirst { it.position == cur_black_rook_pos }
+            val blackRookIndex = remainingBlackPieces.indexOfFirst { it.position == cur_black_rook_pos }
             if (blackRookIndex != -1) {
-                remaining_black_pieces[blackRookIndex].position = updated_black_rook_pos
+                remainingBlackPieces[blackRookIndex].position = updated_black_rook_pos
             }
         }
 
@@ -1262,15 +1521,15 @@ class ChessBoardViewModel : ViewModel() {
 
 
             // Find and update the position of the king in the list of remaining pieces
-            val blackKingIndex = remaining_black_pieces.indexOfFirst { it.position == cur_black_king_pos }
+            val blackKingIndex = remainingBlackPieces.indexOfFirst { it.position == cur_black_king_pos }
             if (blackKingIndex != -1) {
-                remaining_black_pieces[blackKingIndex].position = updated_black_king_pos
+                remainingBlackPieces[blackKingIndex].position = updated_black_king_pos
             }
 
             // Find and update the position of the rook in the list of remaining pieces
-            val blackRookIndex = remaining_black_pieces.indexOfFirst { it.position == cur_black_rook_pos }
+            val blackRookIndex = remainingBlackPieces.indexOfFirst { it.position == cur_black_rook_pos }
             if (blackRookIndex != -1) {
-                remaining_black_pieces[blackRookIndex].position = updated_black_rook_pos
+                remainingBlackPieces[blackRookIndex].position = updated_black_rook_pos
             }
         }
 
@@ -1300,21 +1559,19 @@ class ChessBoardViewModel : ViewModel() {
 
             //printRemainingWhitePieces()
             // Find and update the position of the king in the list of remaining pieces
-            val whiteKingIndex = remaining_white_pieces.indexOfFirst { it.position == cur_white_king_pos }
+            val whiteKingIndex = remainingWhitePieces.indexOfFirst { it.position == cur_white_king_pos }
             //Log.d("White King Index in remaining_white_pieces", "$whiteKingIndex")
             if (whiteKingIndex != -1) {
-                remaining_white_pieces[whiteKingIndex].position = updated_white_king_pos
+                remainingWhitePieces[whiteKingIndex].position = updated_white_king_pos
             }
             //printRemainingWhitePieces()
 
             // Find and update the position of the rook in the list of remaining pieces
-            val whiteRookIndex = remaining_white_pieces.indexOfFirst { it.position == cur_white_rook_pos }
+            val whiteRookIndex = remainingWhitePieces.indexOfFirst { it.position == cur_white_rook_pos }
             if (whiteRookIndex != -1) {
-                remaining_white_pieces[whiteRookIndex].position = updated_white_rook_pos
+                remainingWhitePieces[whiteRookIndex].position = updated_white_rook_pos
             }
-
         }
-
         //White Queen Side Castling Pair(7,4) && targetPost == (7,2)
         else{
             val cur_white_king_pos = Pair(7, 4)
@@ -1342,41 +1599,15 @@ class ChessBoardViewModel : ViewModel() {
 
 
             // Find and update the position of the king in the list of remaining pieces
-            val whiteKingIndex = remaining_white_pieces.indexOfFirst { it.position == cur_white_king_pos }
+            val whiteKingIndex = remainingWhitePieces.indexOfFirst { it.position == cur_white_king_pos }
             if (whiteKingIndex != -1) {
-                remaining_white_pieces[whiteKingIndex].position = updated_white_king_pos
+                remainingWhitePieces[whiteKingIndex].position = updated_white_king_pos
             }
 
             // Find and update the position of the rook in the list of remaining pieces
-            val whiteRookIndex = remaining_white_pieces.indexOfFirst { it.position == cur_white_rook_pos }
+            val whiteRookIndex = remainingWhitePieces.indexOfFirst { it.position == cur_white_rook_pos }
             if (whiteRookIndex != -1) {
-                remaining_white_pieces[whiteRookIndex].position = updated_white_rook_pos
-            }
-        }
-
-
-
-        //Updating the player's turn
-        if(white_turn){
-            white_turn = false
-
-        }else{
-            white_turn = true
-
-        }
-        // Set castling flags
-        when (sourcePosition) {
-            // Black King Side Castling or Black Queen Side Castling
-            Pair(0, 4) -> {
-                if (targetPosition == Pair(0, 6) || targetPosition == Pair(0, 2)) {
-                    _blackCastling.value = true
-                }
-            }
-            // White King Side Castling or White Queen Side Castling
-            Pair(7, 4) -> {
-                if (targetPosition == Pair(7, 6) || targetPosition == Pair(7, 2)) {
-                    _whiteCastling.value = true
-                }
+                remainingWhitePieces[whiteRookIndex].position = updated_white_rook_pos
             }
         }
     }
@@ -1392,9 +1623,9 @@ class ChessBoardViewModel : ViewModel() {
                 chessBoard[sourcePosition.first][sourcePosition.second] = null
 
                 // Find and remove the piece from remaining_white_pieces list
-                val index = remaining_white_pieces.indexOfFirst { it.position == curPiece.position }
+                val index = remainingWhitePieces.indexOfFirst { it.position == curPiece.position }
                 if (index != -1) {
-                    remaining_white_pieces.removeAt(index)
+                    remainingWhitePieces.removeAt(index)
                 }
 
                 // Create a new piece based on the column of the target position
@@ -1412,16 +1643,16 @@ class ChessBoardViewModel : ViewModel() {
                 chessBoard[targetPosition.first][targetPosition.second] = newPiece
 
                 // Add the new piece to remaining_white_pieces
-                remaining_white_pieces.add(newPiece)
+                remainingWhitePieces.add(newPiece)
             }
             "black" -> {
                 // Remove the piece from the chessboard at the source position
                 chessBoard[sourcePosition.first][sourcePosition.second] = null
 
                 // Find and remove the piece from remaining_black_pieces list
-                val index = remaining_black_pieces.indexOfFirst { it.position == curPiece.position }
+                val index = remainingBlackPieces.indexOfFirst { it.position == curPiece.position }
                 if (index != -1) {
-                    remaining_black_pieces.removeAt(index)
+                    remainingBlackPieces.removeAt(index)
                 }
 
                 // Create a new piece based on the column of the target position
@@ -1439,21 +1670,10 @@ class ChessBoardViewModel : ViewModel() {
                 chessBoard[targetPosition.first][targetPosition.second] = newPiece
 
                 // Add the new piece to remaining_black_pieces
-                remaining_black_pieces.add(newPiece)
+                remainingBlackPieces.add(newPiece)
             }
         }
 
-        //Updating the player's turn and updating live data so the new state can be displayed in the chess board
-        if(white_turn){
-            white_turn = false
-
-        }
-        else {
-            white_turn = true
-        }
-
-        // Update the MutableLiveData to signal pawn promotion
-        _isPawnPromotion.value = true
     }
     fun specialMove_PromotionCapture(sourcePosition: Pair<Int, Int>, targetPosition: Pair<Int, Int>){
         // Retrieve the current piece at the source position
@@ -1473,16 +1693,16 @@ class ChessBoardViewModel : ViewModel() {
 
                 // Find and remove the current piece from remaining_white_pieces list
                 val indexCur =
-                    remaining_white_pieces.indexOfFirst { it.position == curPiece.position }
+                    remainingWhitePieces.indexOfFirst { it.position == curPiece.position }
                 if (indexCur != -1) {
-                    remaining_white_pieces.removeAt(indexCur)
+                    remainingWhitePieces.removeAt(indexCur)
                 }
 
                 // Find and remove the captured piece from remaining_black_pieces list
                 val indexCaptured =
-                    remaining_black_pieces.indexOfFirst { it.position == capturedPiece!!.position }
+                    remainingBlackPieces.indexOfFirst { it.position == capturedPiece!!.position }
                 if (indexCaptured != -1) {
-                    remaining_black_pieces.removeAt(indexCaptured)
+                    remainingBlackPieces.removeAt(indexCaptured)
                 }
 
                 // Create a new piece based on the column of the target position
@@ -1517,7 +1737,7 @@ class ChessBoardViewModel : ViewModel() {
                 chessBoard[targetPosition.first][targetPosition.second] = newPiece
 
                 // Add the new piece to remaining_white_pieces
-                remaining_white_pieces.add(newPiece)
+                remainingWhitePieces.add(newPiece)
             }
 
             "black" -> {
@@ -1529,16 +1749,16 @@ class ChessBoardViewModel : ViewModel() {
 
                 // Find and remove the current piece from remaining_black_pieces list
                 val indexCur =
-                    remaining_black_pieces.indexOfFirst { it.position == curPiece.position }
+                    remainingBlackPieces.indexOfFirst { it.position == curPiece.position }
                 if (indexCur != -1) {
-                    remaining_black_pieces.removeAt(indexCur)
+                    remainingBlackPieces.removeAt(indexCur)
                 }
 
                 // Find and remove the captured piece from remaining_white_pieces list
                 val indexCaptured =
-                    remaining_white_pieces.indexOfFirst { it.position == capturedPiece!!.position }
+                    remainingWhitePieces.indexOfFirst { it.position == capturedPiece!!.position }
                 if (indexCaptured != -1) {
-                    remaining_white_pieces.removeAt(indexCaptured)
+                    remainingWhitePieces.removeAt(indexCaptured)
                 }
 
                 // Create a new piece based on the column of the target position
@@ -1573,21 +1793,10 @@ class ChessBoardViewModel : ViewModel() {
                 chessBoard[targetPosition.first][targetPosition.second] = newPiece
 
                 // Add the new piece to remaining_black_pieces
-                remaining_black_pieces.add(newPiece)
+                remainingBlackPieces.add(newPiece)
             }
         }
 
-        //Updating the player's turn and updating live data so the new state can be displayed in the chess board
-        if(white_turn){
-            white_turn = false
-
-        }
-        else {
-            white_turn = true
-        }
-
-        // Update the MutableLiveData to signal pawn promotion
-        _isPawnPromotion.value = true
     }
 
 
@@ -1605,14 +1814,14 @@ class ChessBoardViewModel : ViewModel() {
 
         // Remove the captured piece from remaining_white_pieces or remaining_black_pieces
         if (cur_piece?.color == "white") {
-            val index = remaining_black_pieces.indexOfFirst { it.position == captured_piece?.position }
+            val index = remainingBlackPieces.indexOfFirst { it.position == captured_piece?.position }
             if (index != -1) {
-                remaining_black_pieces.removeAt(index)
+                remainingBlackPieces.removeAt(index)
             }
         } else {
-            val index = remaining_white_pieces.indexOfFirst { it.position == captured_piece?.position }
+            val index = remainingWhitePieces.indexOfFirst { it.position == captured_piece?.position }
             if (index != -1) {
-                remaining_white_pieces.removeAt(index)
+                remainingWhitePieces.removeAt(index)
             }
         }
 
@@ -1627,32 +1836,22 @@ class ChessBoardViewModel : ViewModel() {
 
         // Find the curPiece in remaining_white_pieces or remaining_black_pieces and update its position
         if (cur_piece?.color == "white") {
-            val index = remaining_white_pieces.indexOfFirst { it.position == sourcePosition }
+            val index = remainingWhitePieces.indexOfFirst { it.position == sourcePosition }
             if (index != -1) {
-                remaining_white_pieces[index].position = targetPosition
+                remainingWhitePieces[index].position = targetPosition
             }
         } else {
-            val index = remaining_black_pieces.indexOfFirst { it.position == sourcePosition }
+            val index = remainingBlackPieces.indexOfFirst { it.position == sourcePosition }
             if (index != -1) {
-                remaining_black_pieces[index].position = targetPosition
+                remainingBlackPieces[index].position = targetPosition
             }
         }
-
-        //Updating the player's turn and updating live data so the new state can be displayed in the chess board
-        if(white_turn){
-            white_turn = false
-
-        }else{
-            white_turn = true
-
-        }
-
-        _enPassantFlag.value = true // Set en passant flag to true
 
     }
     //Print function to see where all the pieces are currently in the Chess Board.
     fun printChessBoard() {
-        println("Move Counter: $move_counter")
+        //println("Move Counter: $moveCounter")
+
         for (row in chessBoard.indices) {
             val rowStringBuilder = StringBuilder()
             for (col in chessBoard[row].indices) {
@@ -1663,27 +1862,26 @@ class ChessBoardViewModel : ViewModel() {
                     rowStringBuilder.append("Empty : ")
                 }
             }
-            println("Real ChessBoard")
+            println("Virtual ChessBoard")
             println("Row $row: ${rowStringBuilder.toString()}")
         }
     }
 
     //Print RemainingWhitePieces type and coordinates
     fun printRemainingWhitePieces() {
-        println("Move Counter: $move_counter")
-        println("Remaining White Pieces:")
-        for (piece in remaining_white_pieces) {
+        //println("Move Counter: $moveCounter")
+        println("Remaining Virtual White Pieces:")
+        for (piece in remainingWhitePieces) {
             println("${piece.type}_${piece.color} : ${piece.position}")
         }
     }
 
     //Print RemainingBlackPieces type and coordinates
     fun printRemainingBlackPieces() {
-        println("Move Counter: $move_counter")
-        println("Remaining Black Pieces:")
-        for (piece in remaining_black_pieces) {
+        //println("Move Counter: $moveCounter")
+        println("Remaining Virtual Black Pieces:")
+        for (piece in remainingBlackPieces) {
             println("${piece.type}_${piece.color} : ${piece.position}")
         }
     }
-
 }

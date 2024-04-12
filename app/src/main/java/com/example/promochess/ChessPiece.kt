@@ -23,7 +23,15 @@ class ChessPiece(
     var enpassantMoveFlag: Int = -1 // Default value is -1
 
 
+
+
+
 ){
     // Constructor to initialize the ChessPiece
     constructor(color: String, type: String, row: Int, column: Int) : this(color, type, Pair(row, column))
+
+    // Copy function to create a deep copy of the ChessPiece
+    fun copy(): ChessPiece {
+        return ChessPiece(color, type, position, castlingRight, enpassantMoveFlag)
+    }
 }
