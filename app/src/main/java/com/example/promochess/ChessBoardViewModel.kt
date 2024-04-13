@@ -176,6 +176,10 @@ class ChessBoardViewModel : ViewModel() {
             }
         }
 
+        val is_checkmate = virtualChessGame.is_opposing_king_in_checkmate()
+        if(is_checkmate){
+            println("Checkmate")
+        }
     }
 
     //Updates the Game State when a Piece is being moved to an empty square. Gets reference to the piece at source position, sets sourcepos to null, target pos to chess piece, update the piece position to targetpos,
