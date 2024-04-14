@@ -104,7 +104,7 @@ class VirtualChessGame {
 
         //We know that enemy king is now in check. To avoid Checkmate 1). Evade 2). Capture 3). Block
 
-        //println("We know king is in check")
+        println("We know king is in check")
 
 
         // 1). Check if opposing king can move out the way
@@ -134,6 +134,8 @@ class VirtualChessGame {
 
         for (move in posiible_enemy_king_moves_filtered){
             if(chessBoard[move.first][move.second] == null && !squares_attacked_curplayer.contains(move)){
+                println("Returning here: Can move to an non-attacked empty square")
+                println("Squares attacked (1): $squares_attacked_curplayer")
                 return false
             }
             else if(chessBoard[move.first][move.second] != null){
@@ -141,14 +143,16 @@ class VirtualChessGame {
                 if(chessBoard[move.first][move.second]!!.color != enemyKing!!.color){
                     //if that neighboring piece square is not attacked/protected enemy king can escape/capture that square.
                     if(!squares_attacked_curplayer.contains(move)){
+                        println("Returning here: Can capture opponent piece not protected")
+                        println("Squares attacked (2): $squares_attacked_curplayer")
                         return false
                     }
                 }
             }
         }
 
-
-
+        println("Enemy King did not avoid checkmate")
+        println("Squares attacked by curplayer: $squares_attacked_curplayer")
 
         //2). Check if opposing player can capture the attacking/checking piece(s)
 
@@ -1514,8 +1518,13 @@ class VirtualChessGame {
                     }
                     //Next square is not a blank space
                     else{
-                        possiblesquares_attackedBishop.add(Pair(row_NE, col_NE))
-                        break
+                        if(row_NE == enemyKingPosition!!.first && col_NE == enemyKingPosition.second){
+                            possiblesquares_attackedBishop.add(Pair(row_NE, col_NE))
+                        }
+                        else{
+                            possiblesquares_attackedBishop.add(Pair(row_NE, col_NE))
+                            break
+                        }
                     }
                     row_NE -= 1
                     col_NE += 1
@@ -1533,8 +1542,13 @@ class VirtualChessGame {
                     }
                     //Next square is not a blank space
                     else{
-                        possiblesquares_attackedBishop.add(Pair(row_SE, col_SE))
-                        break
+                        if(row_SE == enemyKingPosition!!.first && col_SE == enemyKingPosition.second){
+                            possiblesquares_attackedBishop.add(Pair(row_SE, col_SE))
+                        }
+                        else{
+                            possiblesquares_attackedBishop.add(Pair(row_SE, col_SE))
+                            break
+                        }
                     }
                     row_SE += 1
                     col_SE += 1
@@ -1551,8 +1565,13 @@ class VirtualChessGame {
                     }
                     //Next square is not a blank space
                     else{
-                        possiblesquares_attackedBishop.add(Pair(row_NW, col_NW))
-                        break
+                        if(row_NW == enemyKingPosition!!.first && col_NW == enemyKingPosition.second){
+                            possiblesquares_attackedBishop.add(Pair(row_NW, col_NW))
+                        }
+                        else{
+                            possiblesquares_attackedBishop.add(Pair(row_NW, col_NW))
+                            break
+                        }
                     }
                     row_NW -= 1
                     col_NW -= 1
@@ -1570,8 +1589,13 @@ class VirtualChessGame {
                     }
                     //Next square is not a blank space
                     else{
-                        possiblesquares_attackedBishop.add(Pair(row_SW, col_SW))
-                        break
+                        if(row_SW == enemyKingPosition!!.first && col_SW == enemyKingPosition.second){
+                            possiblesquares_attackedBishop.add(Pair(row_SW, col_SW))
+                        }
+                        else{
+                            possiblesquares_attackedBishop.add(Pair(row_SW, col_SW))
+                            break
+                        }
                     }
                     row_SW += 1
                     col_SW -= 1
@@ -1598,8 +1622,13 @@ class VirtualChessGame {
 
                     //if next square is not null I am either attacking enemy piece or defending my own piece. Either way that square should be added and break
                     else{
-                        possiblesquares_attackedRook.add(Pair(nextsquare_northrow, cur_col))
-                        break
+                        if(nextsquare_northrow == enemyKingPosition!!.first && cur_col == enemyKingPosition.second){
+                            possiblesquares_attackedRook.add(Pair(nextsquare_northrow, cur_col))
+                        }
+                        else{
+                            possiblesquares_attackedRook.add(Pair(nextsquare_northrow, cur_col))
+                            break
+                        }
                     }
                     nextsquare_northrow -= 1
                 }
@@ -1614,9 +1643,13 @@ class VirtualChessGame {
                     }
                     //if next square is not null I am either attacking enemy piece or defending my own piece. Either way that square should be added and break
                     else{
-                        possiblesquares_attackedRook.add(Pair(nextsquare_southrow, cur_col))
-                        break
-
+                        if(nextsquare_southrow == enemyKingPosition!!.first && cur_col == enemyKingPosition.second){
+                            possiblesquares_attackedRook.add(Pair(nextsquare_southrow, cur_col))
+                        }
+                        else{
+                            possiblesquares_attackedRook.add(Pair(nextsquare_southrow, cur_col))
+                            break
+                        }
                     }
                     nextsquare_southrow += 1
                 }
@@ -1631,8 +1664,13 @@ class VirtualChessGame {
                     }
                     //if next square is not null I am either attacking enemy piece or defending my own piece. Either way that square should be added and break
                     else{
-                        possiblesquares_attackedRook.add(Pair(cur_row, nextsquare_westcol))
-                        break
+                        if(cur_row == enemyKingPosition!!.first && nextsquare_westcol == enemyKingPosition.second){
+                            possiblesquares_attackedRook.add(Pair(cur_row, nextsquare_westcol))
+                        }
+                        else{
+                            possiblesquares_attackedRook.add(Pair(cur_row, nextsquare_westcol))
+                            break
+                        }
                     }
                     nextsquare_westcol -= 1
                 }
@@ -1647,12 +1685,16 @@ class VirtualChessGame {
                     }
                     //Next square is not a blank space
                     else{
-                        possiblesquares_attackedRook.add(Pair(cur_row, nextsquare_eastcol))
-                        break
+                        if(cur_row == enemyKingPosition!!.first && nextsquare_eastcol == enemyKingPosition.second){
+                            possiblesquares_attackedRook.add(Pair(cur_row, nextsquare_eastcol))
+                        }
+                        else{
+                            possiblesquares_attackedRook.add(Pair(cur_row, nextsquare_eastcol))
+                            break
+                        }
                     }
                     nextsquare_eastcol += 1
                 }
-
                 attacked_squares_cur_piece.addAll(possiblesquares_attackedRook)
             }
 
@@ -1677,8 +1719,13 @@ class VirtualChessGame {
 
                     //if next square is not null I am either attacking enemy piece or defending my own piece. Either way that square should be added and break
                     else{
-                        possiblesquares_attackedQueen.add(Pair(nextsquare_northrow, cur_col))
-                        break
+                        if(nextsquare_northrow == enemyKingPosition!!.first && cur_col == enemyKingPosition.second){
+                            possiblesquares_attackedQueen.add(Pair(nextsquare_northrow, cur_col))
+                        }
+                        else{
+                            possiblesquares_attackedQueen.add(Pair(nextsquare_northrow, cur_col))
+                            break
+                        }
                     }
                     nextsquare_northrow -= 1
                 }
@@ -1693,8 +1740,13 @@ class VirtualChessGame {
                     }
                     //if next square is not null I am either attacking enemy piece or defending my own piece. Either way that square should be added and break
                     else{
-                        possiblesquares_attackedQueen.add(Pair(nextsquare_southrow, cur_col))
-                        break
+                        if(nextsquare_southrow == enemyKingPosition!!.first && cur_col == enemyKingPosition.second){
+                            possiblesquares_attackedQueen.add(Pair(nextsquare_southrow, cur_col))
+                        }
+                        else{
+                            possiblesquares_attackedQueen.add(Pair(nextsquare_southrow, cur_col))
+                            break
+                        }
 
                     }
                     nextsquare_southrow += 1
@@ -1710,8 +1762,13 @@ class VirtualChessGame {
                     }
                     //if next square is not null I am either attacking enemy piece or defending my own piece. Either way that square should be added and break
                     else{
-                        possiblesquares_attackedQueen.add(Pair(cur_row, nextsquare_westcol))
-                        break
+                        if(cur_row == enemyKingPosition!!.first && nextsquare_westcol == enemyKingPosition.second){
+                            possiblesquares_attackedQueen.add(Pair(cur_row, nextsquare_westcol))
+                        }
+                        else{
+                            possiblesquares_attackedQueen.add(Pair(cur_row, nextsquare_westcol))
+                            break
+                        }
                     }
                     nextsquare_westcol -= 1
                 }
@@ -1726,8 +1783,13 @@ class VirtualChessGame {
                     }
                     //Next square is not a blank space
                     else{
-                        possiblesquares_attackedQueen.add(Pair(cur_row, nextsquare_eastcol))
-                        break
+                        if(cur_row == enemyKingPosition!!.first && nextsquare_eastcol == enemyKingPosition.second){
+                            possiblesquares_attackedQueen.add(Pair(cur_row, nextsquare_eastcol))
+                        }
+                        else{
+                            possiblesquares_attackedQueen.add(Pair(cur_row, nextsquare_eastcol))
+                            break
+                        }
                     }
                     nextsquare_eastcol += 1
                 }
@@ -1745,8 +1807,13 @@ class VirtualChessGame {
                     }
                     //Next square is not a blank space
                     else{
-                        possiblesquares_attackedQueen.add(Pair(row_NE, col_NE))
-                        break
+                        if(row_NE == enemyKingPosition!!.first && col_NE == enemyKingPosition.second){
+                            possiblesquares_attackedQueen.add(Pair(row_NE, col_NE))
+                        }
+                        else{
+                            possiblesquares_attackedQueen.add(Pair(row_NE, col_NE))
+                            break
+                        }
                     }
                     row_NE -= 1
                     col_NE += 1
@@ -1764,8 +1831,13 @@ class VirtualChessGame {
                     }
                     //Next square is not a blank space
                     else{
-                        possiblesquares_attackedQueen.add(Pair(row_SE, col_SE))
-                        break
+                        if(row_SE == enemyKingPosition!!.first && col_SE == enemyKingPosition.second){
+                            possiblesquares_attackedQueen.add(Pair(row_SE, col_SE))
+                        }
+                        else{
+                            possiblesquares_attackedQueen.add(Pair(row_SE, col_SE))
+                            break
+                        }
                     }
                     row_SE += 1
                     col_SE += 1
@@ -1782,8 +1854,13 @@ class VirtualChessGame {
                     }
                     //Next square is not a blank space
                     else{
-                        possiblesquares_attackedQueen.add(Pair(row_NW, col_NW))
-                        break
+                        if(row_NW == enemyKingPosition!!.first && col_NW == enemyKingPosition.second){
+                            possiblesquares_attackedQueen.add(Pair(row_NW, col_NW))
+                        }
+                        else{
+                            possiblesquares_attackedQueen.add(Pair(row_NW, col_NW))
+                            break
+                        }
                     }
                     row_NW -= 1
                     col_NW -= 1
@@ -1801,8 +1878,13 @@ class VirtualChessGame {
                     }
                     //Next square is not a blank space
                     else{
-                        possiblesquares_attackedQueen.add(Pair(row_SW, col_SW))
-                        break
+                        if(row_SW == enemyKingPosition!!.first && col_SW == enemyKingPosition.second){
+                            possiblesquares_attackedQueen.add(Pair(row_SW, col_SW))
+                        }
+                        else{
+                            possiblesquares_attackedQueen.add(Pair(row_SW, col_SW))
+                            break
+                        }
                     }
                     row_SW += 1
                     col_SW -= 1

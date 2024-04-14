@@ -1,15 +1,66 @@
-<GridLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/chessboard"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:columnCount="8"
-    android:rowCount="8"
-    tools:context=".MainActivity">
+    android:orientation="vertical">
 
-    <!-- Adding ImageViews representing the squares of the chessboard -->
-    <!-- Use repetition or loop to generate 64 ImageViews -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical|center_horizontal"
+        android:padding="16dp">
 
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/white_king"
+            android:layout_gravity="start"
+            android:layout_marginEnd="8dp"/>
 
-</GridLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Promo Chess"
+            android:textSize="22sp"
+            android:textColor="#000000"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/black_king"
+            android:layout_gravity="end"
+            android:layout_marginStart="8dp"/>
+    </LinearLayout>
+
+    <!-- Empty LinearLayout with 200dp height -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="125dp"
+        android:orientation="vertical"/>
+
+    <GridLayout
+        android:id="@+id/chessboard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:columnCount="8"
+        android:rowCount="8"/>
+    <!-- New Game Button -->
+    <Button
+        android:id="@+id/new_game_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:text="New Game"/>
+
+    <!-- Dynamic TextView -->
+    <TextView
+        android:id="@+id/game_over_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:textSize="18sp"
+        android:textColor="#FF0000"
+        android:textAlignment="center"/>
+
+</LinearLayout>
