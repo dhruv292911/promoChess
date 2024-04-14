@@ -90,6 +90,7 @@ class VirtualChessGame {
         //squares attacked by curplayer does contain duplicates as we will use this later
         val squares_attacked_curplayer = all_squares_attacked_by_ownpieces()
 
+        //println("We don't know that king is in check")
         var enemyKingPosition = if (whiteTurn) {
             remainingBlackPieces.find { it.type == "king" }?.position
         } else {
@@ -103,6 +104,7 @@ class VirtualChessGame {
 
         //We know that enemy king is now in check. To avoid Checkmate 1). Evade 2). Capture 3). Block
 
+        //println("We know king is in check")
 
 
         // 1). Check if opposing king can move out the way
@@ -128,12 +130,24 @@ class VirtualChessGame {
             it.first in 0..7 && it.second in 0..7
         }
 
+        val enemyKing = chessBoard[enemy_king_row][enemy_king_col]
 
         for (move in posiible_enemy_king_moves_filtered){
             if(chessBoard[move.first][move.second] == null && !squares_attacked_curplayer.contains(move)){
                 return false
             }
+            else if(chessBoard[move.first][move.second] != null){
+                //if it is occupied by a different colored piece
+                if(chessBoard[move.first][move.second]!!.color != enemyKing!!.color){
+                    //if that neighboring piece square is not attacked/protected enemy king can escape/capture that square.
+                    if(!squares_attacked_curplayer.contains(move)){
+                        return false
+                    }
+                }
+            }
         }
+
+
 
 
         //2). Check if opposing player can capture the attacking/checking piece(s)
