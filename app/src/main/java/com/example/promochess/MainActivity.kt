@@ -645,6 +645,58 @@ class MainActivity : AppCompatActivity() {
                 activityMainBinding.gameOverText.setTextColor(Color.RED)
             }
         }
+
+
+        activityMainBinding.newGameButton.setOnClickListener {
+
+            for(row in 0 until 8 ){
+                for(column in 0 until 8){
+
+                    val cur_square_index = row * 8 + column
+
+                    val cur_square = chessboardLayout.getChildAt(cur_square_index) as? ImageView
+
+                    cur_square?.setImageResource(0)
+
+                    val piece = startingPosition[row][column]
+                    if (piece.isNotEmpty()) {
+                        val resourceId = when (piece) {
+                            "black_pawn" -> R.drawable.black_pawn
+                            "black_rook" -> R.drawable.black_rook
+                            "black_knight" -> R.drawable.black_knight
+                            "black_bishop" -> R.drawable.black_bishop
+                            "black_queen" -> R.drawable.black_queen
+                            "black_king" -> R.drawable.black_king
+                            "white_pawn" -> R.drawable.white_pawn
+                            "white_rook" -> R.drawable.white_rook
+                            "white_knight" -> R.drawable.white_knight
+                            "white_bishop" -> R.drawable.white_bishop
+                            "white_queen" -> R.drawable.white_queen
+                            "white_king" -> R.drawable.white_king
+                            else -> throw IllegalArgumentException("Invalid piece name: $piece")
+                        }
+                        cur_square?.setImageResource(resourceId)
+                    }
+
+                }
+            }
+
+            viewModel.resetGame()
+
+            activityMainBinding.gameOverText.text = ""
+
+            val sourceSquareIndex = soure_valid_move!!.first * 8 + soure_valid_move!!.second
+            val targetSquareIndex = target_valid_move!!.first * 8 + target_valid_move!!.second
+
+            val sourceImageV = chessboardLayout.getChildAt(sourceSquareIndex) as? ImageView
+
+            val targetImageV = chessboardLayout.getChildAt(targetSquareIndex) as? ImageView
+
+            sourceImageV?.setBackgroundColor(Color.TRANSPARENT)
+            targetImageV?.setBackgroundColor(Color.TRANSPARENT)
+
+
+        }
     }
 
 

@@ -102,6 +102,83 @@ class ChessBoardViewModel : ViewModel() {
         }
     }
 
+    fun resetGame(){
+        // Clear the chessBoard
+        for (row in chessBoard.indices) {
+            for (col in chessBoard[row].indices) {
+                chessBoard[row][col] = null
+            }
+        }
+        // Clear the remaining pieces lists
+        remaining_white_pieces.clear()
+        remaining_black_pieces.clear()
+
+        //Re-initialize the chessboard and remaining_white_pieces
+        //Remaining_black_pieces array
+        initializeChessBoard()
+
+        white_turn = true
+
+        move_counter = 0
+    }
+
+    fun initializeChessBoard() {
+        // Initialize the chessboard
+        val newChessBoard = Array(8) { row ->
+            Array<ChessPiece?>(8) { column ->
+                when (row) {
+                    0 -> {
+                        when (column) {
+                            0, 7 -> ChessPiece("black", "rook", Pair(row, column), castlingRight = true)
+                            1, 6 -> ChessPiece("black", "knight", Pair(row, column))
+                            2, 5 -> ChessPiece("black", "bishop", Pair(row, column))
+                            3 -> ChessPiece("black", "queen", Pair(row, column))
+                            4 -> ChessPiece("black", "king", Pair(row, column), castlingRight = true)
+                            else -> null
+                        }
+                    }
+                    1 -> ChessPiece("black", "pawn", Pair(row, column))
+                    6 -> ChessPiece("white", "pawn", Pair(row, column))
+                    7 -> {
+                        when (column) {
+                            0, 7 -> ChessPiece("white", "rook", Pair(row, column), castlingRight = true)
+                            1, 6 -> ChessPiece("white", "knight", Pair(row, column))
+                            2, 5 -> ChessPiece("white", "bishop", Pair(row, column))
+                            3 -> ChessPiece("white", "queen", Pair(row, column))
+                            4 -> ChessPiece("white", "king", Pair(row, column), castlingRight = true)
+                            else -> null
+                        }
+                    }
+                    else -> null
+                }
+            }
+        }
+
+        // Update the chessboard and remaining pieces
+        chessBoard.forEachIndexed { row, _ ->
+            chessBoard[row].forEachIndexed { column, _ ->
+                chessBoard[row][column] = newChessBoard[row][column]
+            }
+        }
+
+        // Clear the remaining pieces lists
+        remaining_white_pieces.clear()
+        remaining_black_pieces.clear()
+
+        // Populate remaining_white_pieces and remaining_black_pieces
+        for (row in chessBoard.indices) {
+            for (col in chessBoard[row].indices) {
+                val piece = chessBoard[row][col]
+                if (piece != null) {
+                    if (piece.color == "white") {
+                        remaining_white_pieces.add(piece)
+                    } else {
+                        remaining_black_pieces.add(piece)
+                    }
+                }
+            }
+        }
+    }
 
 
     fun movePiece(sourcePosition: Pair<Int, Int>, targetPosition: Pair<Int, Int>) {
@@ -708,10 +785,12 @@ class ChessBoardViewModel : ViewModel() {
         if(possible_moves_list.contains(targetPosition)){
             //Moving to a blank square
             if(chessBoard[targetPosition.first][targetPosition.second] == null){
+                current_piece!!.castlingRight = false
                 moving_piece_empty_square(sourcePosition, targetPosition)
             }
             //Capturing an enemy piece that is not the king
             else{
+                current_piece!!.castlingRight = false
                 capturing_piece_opposite_color(sourcePosition, targetPosition)
             }
         }
@@ -1173,7 +1252,7 @@ class ChessBoardViewModel : ViewModel() {
             //Checking if the path is empty for the player to castle and there is a white rook in the corner
             if(chessBoard[7][3] == null && chessBoard[7][2] == null && chessBoard[7][1] == null && chessBoard[7][0] != null){
                 if(chessBoard[7][0]!!.color == "white" && chessBoard[7][0]!!.type == "rook"){
-                    if(current_piece.castlingRight && chessBoard[7][7]!!.castlingRight){
+                    if(current_piece.castlingRight && chessBoard[7][0]!!.castlingRight){
                         special_Move_Castling(sourcePosition, targetPosition)
                     }
                 }
