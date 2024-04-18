@@ -1,5 +1,6 @@
 package com.example.promochess
 
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.widget.GridLayout
@@ -20,6 +21,9 @@ class MainActivity : AppCompatActivity() {
 
     private var soure_valid_move: Pair<Int, Int>? = null
     private var target_valid_move: Pair<Int, Int>? = null
+
+    var previousSource: Pair<Int, Int>? = null
+    var previousTarget: Pair<Int, Int>? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -164,7 +168,6 @@ class MainActivity : AppCompatActivity() {
                             soure_valid_move!!.first * 8 + soure_valid_move!!.second
                         val targetSquareIndex =
                             target_valid_move!!.first * 8 + target_valid_move!!.second
-
                         // Get the ImageView at the source position and retrieve its image resource
                         val sourceSquare =
                             chessboardLayout.getChildAt(sourceSquareIndex) as? ImageView
@@ -188,6 +191,45 @@ class MainActivity : AppCompatActivity() {
                         //viewModel.printChessBoard()
                         //viewModel.printRemainingWhitePieces()
                         //viewModel.printRemainingBlackPieces()
+
+
+                        // Reset background color of previous source and target squares (if any)
+//                        previousSourceSquare?.setBackgroundColor(Color.TRANSPARENT)
+//                        previousTargetSquare?.setBackgroundColor(Color.TRANSPARENT)
+                        if(previousSource != null){
+
+                            val previoussource_index = previousSource!!.first * 8 + previousSource!!.second
+
+                            val previousSquare = chessboardLayout.getChildAt(previoussource_index) as? ImageView
+
+                            if((previousSource!!.first + previousSource!!.second) % 2 == 0){
+                                previousSquare!!.setBackgroundColor(resources.getColor(R.color.white))
+                            }else{
+                                previousSquare!!.setBackgroundColor(resources.getColor(R.color.light_brown))
+                            }
+                        }
+                        if(previousTarget != null){
+                            val previoustarget_index = previousTarget!!.first * 8 + previousTarget!!.second
+
+                            val previousTargetSquare = chessboardLayout.getChildAt(previoustarget_index) as? ImageView
+
+                            if((previousTarget!!.first + previousTarget!!.second) % 2 == 0){
+                                previousTargetSquare!!.setBackgroundColor(resources.getColor(R.color.white))
+                            }else{
+                                previousTargetSquare!!.setBackgroundColor(resources.getColor(R.color.light_brown))
+                            }
+                        }
+
+                        sourceSquare?.setBackgroundColor(Color.LTGRAY) // Set background color
+                        targetSquare?.setBackgroundColor(Color.LTGRAY) // Set background color
+
+                        previousSource = soure_valid_move
+                        previousTarget = target_valid_move
+//                        // Update previous source and target squares
+//                        previousSourceSquare = sourceSquare
+//                        previousTargetSquare = targetSquare
+
+
                     }
                 }
             }
@@ -220,6 +262,9 @@ class MainActivity : AppCompatActivity() {
                         // Set the image resource of the target position to the source image
                         targetSquare?.setImageDrawable(sourceImageResource)
                         //Log.d("Updating Display", "Finished Update")
+
+                        sourceSquare?.setBackgroundColor(Color.LTGRAY) // Set background color
+                        targetSquare?.setBackgroundColor(Color.LTGRAY) // Set background color
 
 
                         //Now we need to do similar for the rook
@@ -272,6 +317,38 @@ class MainActivity : AppCompatActivity() {
                     viewModel.move_counter += 1
                     //viewModel.printChessBoard()
                     //viewModel.printRemainingWhitePieces()
+
+                    if(previousSource != null){
+
+                        val previoussource_index = previousSource!!.first * 8 + previousSource!!.second
+
+                        val previousSquare = chessboardLayout.getChildAt(previoussource_index) as? ImageView
+
+                        if((previousSource!!.first + previousSource!!.second) % 2 == 0){
+                            previousSquare!!.setBackgroundColor(resources.getColor(R.color.white))
+                        }else{
+                            previousSquare!!.setBackgroundColor(resources.getColor(R.color.light_brown))
+                        }
+                    }
+                    if(previousTarget != null){
+                        val previoustarget_index = previousTarget!!.first * 8 + previousTarget!!.second
+
+                        val previousTargetSquare = chessboardLayout.getChildAt(previoustarget_index) as? ImageView
+
+                        if((previousTarget!!.first + previousTarget!!.second) % 2 == 0){
+                            previousTargetSquare!!.setBackgroundColor(resources.getColor(R.color.white))
+                        }else{
+                            previousTargetSquare!!.setBackgroundColor(resources.getColor(R.color.light_brown))
+                        }
+                    }
+
+
+                    previousSource = soure_valid_move
+                    previousTarget = target_valid_move
+//                        // Update previous source and target squares
+//                        previousSourceSquare = sourceSquare
+//                        previousTargetSquare = targetSquare
+
                 }
             }
         }
@@ -304,6 +381,8 @@ class MainActivity : AppCompatActivity() {
                         targetSquare?.setImageDrawable(sourceImageResource)
                         //Log.d("Updating Display", "Finished Update")
 
+                        sourceSquare?.setBackgroundColor(Color.LTGRAY) // Set background color
+                        targetSquare?.setBackgroundColor(Color.LTGRAY) // Set background color
 
                         //Now we need to do similar for the rook
                         //King side Castling Rook Source(0,7) Rook Target (0,5)
@@ -355,6 +434,37 @@ class MainActivity : AppCompatActivity() {
                     viewModel.move_counter += 1
                     //viewModel.printChessBoard()
                     //viewModel.printRemainingBlackPieces()
+
+                    if(previousSource != null){
+
+                        val previoussource_index = previousSource!!.first * 8 + previousSource!!.second
+
+                        val previousSquare = chessboardLayout.getChildAt(previoussource_index) as? ImageView
+
+                        if((previousSource!!.first + previousSource!!.second) % 2 == 0){
+                            previousSquare!!.setBackgroundColor(resources.getColor(R.color.white))
+                        }else{
+                            previousSquare!!.setBackgroundColor(resources.getColor(R.color.light_brown))
+                        }
+                    }
+                    if(previousTarget != null){
+                        val previoustarget_index = previousTarget!!.first * 8 + previousTarget!!.second
+
+                        val previousTargetSquare = chessboardLayout.getChildAt(previoustarget_index) as? ImageView
+
+                        if((previousTarget!!.first + previousTarget!!.second) % 2 == 0){
+                            previousTargetSquare!!.setBackgroundColor(resources.getColor(R.color.white))
+                        }else{
+                            previousTargetSquare!!.setBackgroundColor(resources.getColor(R.color.light_brown))
+                        }
+                    }
+
+
+                    previousSource = soure_valid_move
+                    previousTarget = target_valid_move
+//                        // Update previous source and target squares
+//                        previousSourceSquare = sourceSquare
+//                        previousTargetSquare = targetSquare
                 }
             }
         }
@@ -378,6 +488,9 @@ class MainActivity : AppCompatActivity() {
                         val targetSquare =
                             chessboardLayout.getChildAt(targetSquareIndex) as? ImageView
                         targetSquare?.setImageResource(0)
+
+                        sourceSquare?.setBackgroundColor(Color.LTGRAY) // Set background color
+                        targetSquare?.setBackgroundColor(Color.LTGRAY) // Set background color
 
                         // Display a white piece
                         if (target.first == 0) {
@@ -405,6 +518,37 @@ class MainActivity : AppCompatActivity() {
 
                     //Increasing move_counter
                     viewModel.move_counter += 1
+
+                    if(previousSource != null){
+
+                        val previoussource_index = previousSource!!.first * 8 + previousSource!!.second
+
+                        val previousSquare = chessboardLayout.getChildAt(previoussource_index) as? ImageView
+
+                        if((previousSource!!.first + previousSource!!.second) % 2 == 0){
+                            previousSquare!!.setBackgroundColor(resources.getColor(R.color.white))
+                        }else{
+                            previousSquare!!.setBackgroundColor(resources.getColor(R.color.light_brown))
+                        }
+                    }
+                    if(previousTarget != null){
+                        val previoustarget_index = previousTarget!!.first * 8 + previousTarget!!.second
+
+                        val previousTargetSquare = chessboardLayout.getChildAt(previoustarget_index) as? ImageView
+
+                        if((previousTarget!!.first + previousTarget!!.second) % 2 == 0){
+                            previousTargetSquare!!.setBackgroundColor(resources.getColor(R.color.white))
+                        }else{
+                            previousTargetSquare!!.setBackgroundColor(resources.getColor(R.color.light_brown))
+                        }
+                    }
+
+
+                    previousSource = soure_valid_move
+                    previousTarget = target_valid_move
+//                        // Update previous source and target squares
+//                        previousSourceSquare = sourceSquare
+//                        previousTargetSquare = targetSquare
                 }
             }
         }
@@ -446,13 +590,59 @@ class MainActivity : AppCompatActivity() {
                         // Set the image resource of the target position to the source image
                         targetSquare?.setImageDrawable(sourceImageResource)
 
+                        sourceSquare?.setBackgroundColor(Color.LTGRAY) // Set background color
+                        targetSquare?.setBackgroundColor(Color.LTGRAY) // Set background color
+
                         //Increasing move_counter
                         viewModel.move_counter += 1
                         //viewModel.printChessBoard()
                         //viewModel.printRemainingWhitePieces()
                         //viewModel.printRemainingBlackPieces()
+
+
+                        if(previousSource != null){
+
+                            val previoussource_index = previousSource!!.first * 8 + previousSource!!.second
+
+                            val previousSquare = chessboardLayout.getChildAt(previoussource_index) as? ImageView
+
+                            if((previousSource!!.first + previousSource!!.second) % 2 == 0){
+                                previousSquare!!.setBackgroundColor(resources.getColor(R.color.white))
+                            }else{
+                                previousSquare!!.setBackgroundColor(resources.getColor(R.color.light_brown))
+                            }
+                        }
+                        if(previousTarget != null){
+                            val previoustarget_index = previousTarget!!.first * 8 + previousTarget!!.second
+
+                            val previousTargetSquare = chessboardLayout.getChildAt(previoustarget_index) as? ImageView
+
+                            if((previousTarget!!.first + previousTarget!!.second) % 2 == 0){
+                                previousTargetSquare!!.setBackgroundColor(resources.getColor(R.color.white))
+                            }else{
+                                previousTargetSquare!!.setBackgroundColor(resources.getColor(R.color.light_brown))
+                            }
+                        }
+
+
+                        previousSource = soure_valid_move
+                        previousTarget = target_valid_move
+//                        // Update previous source and target squares
+//                        previousSourceSquare = sourceSquare
+//                        previousTargetSquare = targetSquare
+
                     }
                 }
+            }
+        }
+
+        viewModel.checkmate.observe(this) { isCheckmate ->
+            if (isCheckmate) {
+                // Perform actions when checkmate occurs
+                // For example, show a dialog, end the game, etc.
+                // You can replace the toast with your desired action
+                activityMainBinding.gameOverText.text = "CheckMate, Game Over"
+                activityMainBinding.gameOverText.setTextColor(Color.RED)
             }
         }
     }
@@ -495,6 +685,8 @@ class MainActivity : AppCompatActivity() {
             sourcePosition = null
         }
     }
+
+
 
 
     // Function to update the GridLayout with the new piece positions

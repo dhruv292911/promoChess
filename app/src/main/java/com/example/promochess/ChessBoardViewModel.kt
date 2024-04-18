@@ -42,6 +42,11 @@ class ChessBoardViewModel : ViewModel() {
     val enPassantFlag: LiveData<Boolean>
         get() = _enPassantFlag
 
+    //Live Data for Checkmate
+    private val _checkmate = MutableLiveData<Boolean>()
+    val checkmate: LiveData<Boolean>
+        get() = _checkmate
+
 
 
     // Initialize the chessboard
@@ -96,6 +101,7 @@ class ChessBoardViewModel : ViewModel() {
             }
         }
     }
+
 
 
     fun movePiece(sourcePosition: Pair<Int, Int>, targetPosition: Pair<Int, Int>) {
@@ -178,7 +184,8 @@ class ChessBoardViewModel : ViewModel() {
 
         val is_checkmate = virtualChessGame.is_opposing_king_in_checkmate()
         if(is_checkmate){
-            println("Checkmate")
+            //println("Checkmate")
+            _checkmate.value = true
         }
     }
 
