@@ -678,24 +678,18 @@ class MainActivity : AppCompatActivity() {
                         cur_square?.setImageResource(resourceId)
                     }
 
+                    if((row + column) % 2 == 0){
+                        cur_square!!.setBackgroundColor(resources.getColor(R.color.white))
+                    }
+                    else{
+                        cur_square!!.setBackgroundColor(resources.getColor(R.color.light_brown))
+                    }
                 }
             }
 
             viewModel.resetGame()
 
             activityMainBinding.gameOverText.text = ""
-
-            val sourceSquareIndex = soure_valid_move!!.first * 8 + soure_valid_move!!.second
-            val targetSquareIndex = target_valid_move!!.first * 8 + target_valid_move!!.second
-
-            val sourceImageV = chessboardLayout.getChildAt(sourceSquareIndex) as? ImageView
-
-            val targetImageV = chessboardLayout.getChildAt(targetSquareIndex) as? ImageView
-
-            sourceImageV?.setBackgroundColor(Color.TRANSPARENT)
-            targetImageV?.setBackgroundColor(Color.TRANSPARENT)
-
-
         }
     }
 
