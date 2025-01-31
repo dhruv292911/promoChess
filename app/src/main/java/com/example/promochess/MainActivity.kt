@@ -26,6 +26,10 @@ class MainActivity : AppCompatActivity() {
     var previousTarget: Pair<Int, Int>? = null
 
 
+    //we will use prev click to save what square we clicked on previously
+    var prev_click: Pair<Int, Int>? = null
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val activityMainBinding = ActivityMainBinding.inflate(layoutInflater)
@@ -139,11 +143,32 @@ class MainActivity : AppCompatActivity() {
                     val position = Pair(row, column)
                     //Log.d("Clicked Square", "Position: $position")
 
-
+                    //square.setBackgroundResource(R.drawable.border)
                     //Call Handle Click to Handle the Move
                     //1st Click will Check if the right Color piece is clicked
                     //White turn -> White piece Clicked, Black turn --> Black piece Clicked
+
+                    if(prev_click != null){
+                        val prev_click_index = prev_click!!.first * 8 + prev_click!!.second
+                        val prev_row = prev_click!!.first
+                        val prev_col = prev_click!!.second
+
+                        val prevSquare = chessboardLayout.getChildAt(prev_click_index) as? ImageView
+                        prevSquare?.setBackgroundResource(0)
+
+                        if ((prev_row + prev_col) % 2 == 0) {
+                            prevSquare?.setBackgroundColor(resources.getColor(R.color.white))
+                        } else {
+                            prevSquare?.setBackgroundColor(resources.getColor(R.color.light_brown))
+                        }
+                    }
+
+                    square.setBackgroundColor(resources.getColor(R.color.yellow))
+
                     handleSquareClick(row, column)
+
+                    //set the current square as the new prev square
+                    prev_click = Pair(row, column)
                 }
             }
         }
