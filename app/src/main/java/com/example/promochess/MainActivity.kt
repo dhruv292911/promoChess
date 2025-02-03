@@ -1,8 +1,11 @@
 package com.example.promochess
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.Toast
@@ -11,6 +14,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.promochess.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -30,11 +34,21 @@ class MainActivity : AppCompatActivity() {
     var prev_click: Pair<Int, Int>? = null
 
 
+    //Setting Up the snapshots for the moveHistory Recycler View
+    private lateinit var moveHistoryAdapter: MoveHistoryAdapter
+    private val moveSnapshots = mutableListOf<Bitmap>()
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val activityMainBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(activityMainBinding.root)
 
+        //Setting Up my recyclerview moveHistory Recycler View
+        val recyclerView = activityMainBinding.moveHistoryRecyclerView
+        recyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        moveHistoryAdapter = MoveHistoryAdapter(moveSnapshots)
+        recyclerView.adapter = moveHistoryAdapter
 
         val chessboardLayout = activityMainBinding.chessboard
 
@@ -254,7 +268,8 @@ class MainActivity : AppCompatActivity() {
 //                        previousSourceSquare = sourceSquare
 //                        previousTargetSquare = targetSquare
 
-
+                        //Call this function to update the recyclerview
+                        onMoveMade()
                     }
                 }
             }
@@ -715,6 +730,12 @@ class MainActivity : AppCompatActivity() {
             viewModel.resetGame()
 
             activityMainBinding.gameOverText.text = ""
+
+            //Reset the recyclerview
+            // Clear the snapshots list
+            moveSnapshots.clear()
+            // Notify the adapter that all items have been removed
+            moveHistoryAdapter.notifyDataSetChanged()
         }
     }
 
@@ -757,22 +778,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun captureBoardSnapshot(view: View): Bitmap {
+        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        view.draw(canvas)
+        return bitmap
+    }
 
-
-
-    // Function to update the GridLayout with the new piece positions
-//    private fun updateChessboardDisplay(source: Pair<Int, Int>, target: Pair<Int, Int>) {
-//        // Get the ImageView at the source position and clear its image resource
-//        val sourceSquareIndex = source.first * 8 + source.second
-//        val sourceSquare = chessboardLayout.getChildAt(sourceSquareIndex) as? ImageView
-//        sourceSquare?.setImageResource(0) // Clear the image resource
-//
-//        // Get the ImageView at the target position and set its new image resource
-//        val targetSquareIndex = target.first * 8 + target.second
-//        val targetSquare = chessboardLayout.getChildAt(targetSquareIndex) as? ImageView
-//        targetSquare?.setImageResource(getPieceResourceForPosition(target))
-//    }
-
-    // Function to get the image resource for a given position on the chessboard
+    fun onMoveMade() {
+        val snapshot = captureBoardSnapshot(findViewById(R.id.chessboard))
+        moveSnapshots.add(snapshot)
+        moveHistoryAdapter.notifyItemInserted(moveSnapshots.size - 1)
+    }
 
 }

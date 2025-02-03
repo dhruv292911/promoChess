@@ -34,10 +34,22 @@
     </LinearLayout>
 
     <!-- Empty LinearLayout with 200dp height -->
-    <LinearLayout
+    <!-- this can be my horizontal recycler view to show the game states!-->
+
+
+
+<!--    <LinearLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="125dp"-->
+<!--        android:orientation="vertical"/>-->
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/moveHistoryRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="125dp"
-        android:orientation="vertical"/>
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp"
+        tools:listitem="@layout/item_move_snapshot"/>
 
     <GridLayout
         android:id="@+id/chessboard"
