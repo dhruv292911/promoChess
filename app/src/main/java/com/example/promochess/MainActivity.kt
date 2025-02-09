@@ -686,6 +686,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        viewModel.stalemate.observe(this) { isStalemate ->
+            if (isStalemate) {
+                // Perform actions when Stalemate occurs
+                // For example, show a dialog, end the game, etc.
+                // You can replace the toast with your desired action
+                activityMainBinding.gameOverText.text = "StaleMate, Game Over"
+                activityMainBinding.gameOverText.setTextColor(Color.RED)
+            }
+        }
+
 
         activityMainBinding.newGameButton.setOnClickListener {
 
@@ -763,6 +773,7 @@ class MainActivity : AppCompatActivity() {
                     sourcePosition = null
                 }
             }
+            //else you clicked on a empty square so source position remains null, nothing happens
         }
         else {
             // Second click, move the piece from sourcePosition to (row, column)

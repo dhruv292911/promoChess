@@ -69,7 +69,7 @@ class VirtualChessGame {
         //printRemainingWhitePieces()
         //printRemainingBlackPieces()
 
-        // Find the position of the current player's king
+        // Find the position of the current player's king //Checking if the move is placing my own king under check, then it is an invalid move
         val currentPlayerKingPosition = if (whiteTurn) {
             remainingWhitePieces.find { it.type == "king" }?.position
         } else {
@@ -82,9 +82,1064 @@ class VirtualChessGame {
             return false
         }
 
-        return true // Placeholder return value
+        return true // Placeholder return value, //returning true the move did not expose the own king in check, move is valid
     }
 
+    fun createStalemateChessGame(): StalemateChessGame {
+        val copiedChessBoard = chessBoard.map { row ->
+            row.map { piece -> piece?.copy() }.toTypedArray()
+        }.toTypedArray()
+
+        val copiedRemainingWhitePieces = remainingWhitePieces.map { it.copy() }.toMutableList()
+        val copiedRemainingBlackPieces = remainingBlackPieces.map { it.copy() }.toMutableList()
+
+        return StalemateChessGame().apply {
+            initializeGame(
+                copiedChessBoard,
+                copiedRemainingWhitePieces,
+                copiedRemainingBlackPieces,
+                whiteTurn,
+                moveCounter
+            )
+        }
+    }
+
+    //New function to check if the enemy king is in stalemate, it is not in check, but the enemy does not have any legal moves left, Stalemate!!
+    fun is_opposing_king_in_stalemate(): Boolean{
+
+
+        //1). Verify our King is not in Check
+
+        val squares_attacked_enemy = all_squares_attacked_by_enemy()
+
+        var currentPlayerKingPosition = if (whiteTurn) {
+            remainingWhitePieces.find { it.type == "king" }?.position
+        } else {
+            remainingBlackPieces.find { it.type == "king" }?.position
+        }
+        //if our king is attacked/it is under check return false. You cannot have stalemate when king is in check.
+        if(squares_attacked_enemy.contains(currentPlayerKingPosition)){
+            return false
+        }
+
+        //2). Verify that our side has no legal Moves
+
+
+        //To check for stalemate compile a list of all possible moves by own pieces. If the size of the list is 0, stalemate!!
+        //Check king moves of our own king, and moves of all our own pieces
+
+        val total_possible_moves_by_currentplayer = mutableListOf<Pair<Int, Int>>()
+
+        //val moves_possible_by_enemy_not_king = moves_possible_by_enemy_pieces()
+        //total_possible_moves_by_enemy.addAll(moves_possible_by_enemy_not_king)
+
+        //Now we will calculate the 8 possible king moves and add it to our list
+
+        //**KING MOVES**//
+        //1 we need to check that the king moves are inbounds, and if moving to a blank square check that that square is not attacked, and if
+        //capturing an enemy piece not the king, check that square is not protected/attacked.
+
+        // 1). Check if current king can move out the way
+        val current_king_row = currentPlayerKingPosition!!.first
+        val current_king_col = currentPlayerKingPosition.second
+
+        //Eight Possible Moves for Enemey King N, S, E, W, NE, NW, SE, SW
+        val N = Pair(current_king_row - 1, current_king_col)
+        val S = Pair(current_king_row + 1, current_king_col)
+        val E = Pair(current_king_row, current_king_col + 1)
+        val W = Pair(current_king_row, current_king_col - 1)
+
+
+        val NE = Pair(current_king_row - 1, current_king_col + 1)
+        val SE = Pair(current_king_row + 1, current_king_col + 1)
+        val NW = Pair(current_king_row - 1, current_king_col - 1)
+        val SW = Pair(current_king_row + 1, current_king_col - 1)
+
+        var possible_current_king_moves = listOf(N, S, E, W, NE, SE, NW, SW)
+
+        //This will contain only those moves that are valid within the bounds of the chessboard
+        val possible_current_king_moves_filtered = possible_current_king_moves.filter {
+            it.first in 0..7 && it.second in 0..7
+        }
+
+        val currentKing = chessBoard[current_king_row][current_king_col]
+
+        for (move in possible_current_king_moves_filtered){
+            //if the possible move square is blank and not attacked, it is safe to move there
+            if(chessBoard[move.first][move.second] == null && !squares_attacked_enemy.contains(move)){
+                total_possible_moves_by_currentplayer.add(move)
+            }
+            else if(chessBoard[move.first][move.second] != null){
+                //if it is occupied by a different colored piece
+                if(chessBoard[move.first][move.second]!!.color != currentKing!!.color){
+                    //if that neighboring piece square is not attacked/protected current player king can escape/capture that square.
+                    if(!squares_attacked_enemy.contains(move)){
+                        total_possible_moves_by_currentplayer.add(move)
+                    }
+                }
+            }
+        }
+
+        // 1). We have already compiled the possible King moves by the enemy and added it to the total list
+        if(moveCounter > 18){
+            Log.d("Stalemate possible moves", "{Moves possible by king: $total_possible_moves_by_currentplayer}")
+        }
+        //2). Now call helper function here to compile the list of possible moves by all other pieces besides the king
+        // Make sure you check for a pin for every move. Use StalemateChess Game to play the move and validate the move (check for pin)
+
+        //Calling the helper function to compile a list of all other valid moves besides king moves
+        val moves_poss_besides_king = stalemate_moves_possible_by_own_pieces()
+
+        //adding that list to the total possible moves by current player
+        total_possible_moves_by_currentplayer.addAll(moves_poss_besides_king)
+
+        //if the total_possible_moves_by_current player is 0 return true
+        //the position is in stalemate
+
+        if(moveCounter > 18){
+            Log.d("Stalemate possible moves", "{Moves possible besides king: $total_possible_moves_by_currentplayer}")
+        }
+
+
+        if(total_possible_moves_by_currentplayer.size == 0){
+            return true
+        }
+        return false
+    }
+
+    //This function is used to debug the game and track where exactly the squares are being added to your chess game
+    fun squareChecker(checkingPair: Pair<Int, Int>): Boolean {
+        val specialPositions = setOf(Pair(2, 5), Pair(2, 7), Pair(1, 4))
+        return checkingPair in specialPositions
+    }
+
+    fun stalemate_moves_possible_by_own_pieces():List<Pair<Int, Int>> {
+
+        //This is where we will store the finalized moves possible
+        val moves_possible_by_own_pieces_besides_king = mutableListOf<Pair<Int, Int>>()
+
+        val curPieces = if (whiteTurn) remainingWhitePieces else remainingBlackPieces
+
+        for(curPiece in curPieces){
+            val current_piece = curPiece
+
+            val sourcePos = current_piece.position
+
+            if(curPiece.type =="pawn"){
+                if(curPiece.color == "white"){
+                    val jump_twice_position = Pair(current_piece.position.first -2, current_piece.position.second)
+                    val jump_once_position = Pair(current_piece.position.first - 1, current_piece.position.second)
+                    val capture_right_position = Pair(current_piece.position.first - 1, current_piece.position.second + 1)
+                    val capture_left_position = Pair(current_piece.position.first - 1, current_piece.position.second -1)
+
+                    //if white pawn is in starting row can jump once, jump twice, capture diagonal left, diagonal right (Row 6)
+                    //Cannot capture Black King
+                    if(current_piece.position.first == 6){
+                        if(chessBoard[jump_twice_position.first][jump_twice_position.second] == null && chessBoard[jump_once_position.first][jump_once_position.second] == null){
+                            //moves_possible.add(jump_twice_position)
+                            val testGame = createStalemateChessGame()
+                            val isValid = testGame.playMove(sourcePos, jump_twice_position)
+                            if(isValid){
+                                moves_possible_by_own_pieces_besides_king.add(jump_twice_position)
+                            }
+                        }
+                        if(chessBoard[jump_once_position.first][jump_once_position.second] == null){
+                            //moves_possible.add((jump_once_position))
+                            val testGame = createStalemateChessGame()
+                            val isValid = testGame.playMove(sourcePos, jump_once_position)
+                            if(isValid){
+                                moves_possible_by_own_pieces_besides_king.add(jump_once_position)
+                            }
+                        }
+                        if(capture_right_position.first in 0..7 && capture_right_position.second in 0..7){
+                            if(chessBoard[capture_right_position.first][capture_right_position.second] != null){
+                                if(chessBoard[capture_right_position.first][capture_right_position.second]!!.color != current_piece.color && chessBoard[capture_right_position.first][capture_right_position.second]!!.type != "king"){
+                                    //moves_possible.add(capture_right_position)
+                                    val testGame = createStalemateChessGame()
+                                    val isValid = testGame.playMove(sourcePos, capture_right_position)
+                                    if(isValid){
+                                        moves_possible_by_own_pieces_besides_king.add(capture_right_position)
+                                    }
+                                }
+                            }
+                        }
+
+                        if(capture_left_position.first in 0..7 && capture_left_position.second in 0..7){
+                            if(chessBoard[capture_left_position.first][capture_left_position.second] != null){
+                                if(chessBoard[capture_left_position.first][capture_left_position.second]!!.color != current_piece.color && chessBoard[capture_left_position.first][capture_left_position.second]!!.type != "king"){
+                                    //moves_possible.add(capture_left_position)
+                                    val testGame = createStalemateChessGame()
+                                    val isValid = testGame.playMove(sourcePos, capture_left_position)
+                                    if(isValid){
+                                        moves_possible_by_own_pieces_besides_king.add(capture_left_position)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    //Possible empassant, jump once, capture left, capture right, white pawn in 3rd row
+                    else if(current_piece.position.first == 3){
+                        if(chessBoard[jump_once_position.first][jump_once_position.second] == null){
+                            //moves_possible.add((jump_once_position))
+                            val testGame = createStalemateChessGame()
+                            val isValid = testGame.playMove(sourcePos, jump_once_position)
+                            if(isValid){
+                                moves_possible_by_own_pieces_besides_king.add(jump_once_position)
+                            }
+                        }
+                        val left_neighbor_pos = Pair(current_piece.position.first, current_piece.position.second - 1)
+                        val right_neighbor_pos = Pair(current_piece.position.first, current_piece.position.second + 1)
+
+                        // can both empassant or capture right. Capture to right
+                        if(capture_right_position.first in 0..7 && capture_right_position.second in 0..7){
+                            if(chessBoard[capture_right_position.first][capture_right_position.second] != null){
+                                if(chessBoard[capture_right_position.first][capture_right_position.second]!!.color != current_piece.color && chessBoard[capture_right_position.first][capture_right_position.second]!!.type != "king"){
+                                    //moves_possible.add(capture_right_position)
+                                    val testGame = createStalemateChessGame()
+                                    val isValid = testGame.playMove(sourcePos, capture_right_position)
+                                    if(isValid){
+                                        moves_possible_by_own_pieces_besides_king.add(capture_right_position)
+                                    }
+                                }
+                            }
+                            //else{} capture_right position is null. empassant to right
+                            else{
+                                if(right_neighbor_pos.first in 0..7 && right_neighbor_pos.second in 0 .. 7){
+                                    if(chessBoard[right_neighbor_pos.first][right_neighbor_pos.second] != null){
+                                        if(chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.type == "pawn" && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.color != current_piece.color){
+                                            if(chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.enpassantMoveFlag == moveCounter){
+                                                //moves_possible.add(capture_right_position)
+                                                val testGame = createStalemateChessGame()
+                                                val isValid = testGame.playMove(sourcePos, capture_right_position)
+                                                if(isValid){
+                                                    moves_possible_by_own_pieces_besides_king.add(capture_right_position)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // can both empassant or capture left. Capture to left
+                        if(capture_left_position.first in 0..7 && capture_left_position.second in 0..7){
+                            if(chessBoard[capture_left_position.first][capture_left_position.second] != null){
+                                if(chessBoard[capture_left_position.first][capture_left_position.second]!!.color != current_piece.color && chessBoard[capture_left_position.first][capture_left_position.second]!!.type != "king"){
+                                    //moves_possible.add(capture_left_position)
+                                    val testGame = createStalemateChessGame()
+                                    val isValid = testGame.playMove(sourcePos, capture_left_position)
+                                    if(isValid){
+                                        moves_possible_by_own_pieces_besides_king.add(capture_left_position)
+                                    }
+                                }
+                            }
+                            //else{}capture_left position is null. empassant to left
+                            else{
+                                if(left_neighbor_pos.first in 0..7 && left_neighbor_pos.second in 0 .. 7){
+                                    if(chessBoard[left_neighbor_pos.first][left_neighbor_pos.second] != null){
+                                        if(chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.type == "pawn" && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.color != current_piece.color){
+                                            if(chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.enpassantMoveFlag == moveCounter){
+                                                //moves_possible.add(capture_left_position)
+                                                val testGame = createStalemateChessGame()
+                                                val isValid = testGame.playMove(sourcePos, capture_left_position)
+                                                if(isValid){
+                                                    moves_possible_by_own_pieces_besides_king.add(capture_left_position)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else{
+                        if(chessBoard[jump_once_position.first][jump_once_position.second] == null){
+                            //moves_possible.add((jump_once_position))
+                            val testGame = createStalemateChessGame()
+                            val isValid = testGame.playMove(sourcePos, jump_once_position)
+                            if(isValid){
+                                moves_possible_by_own_pieces_besides_king.add(jump_once_position)
+                            }
+                        }
+                        if(capture_right_position.first in 0..7 && capture_right_position.second in 0..7){
+                            if(chessBoard[capture_right_position.first][capture_right_position.second] != null){
+                                if(chessBoard[capture_right_position.first][capture_right_position.second]!!.color != current_piece.color && chessBoard[capture_right_position.first][capture_right_position.second]!!.type != "king"){
+                                    //moves_possible.add(capture_right_position)
+                                    val testGame = createStalemateChessGame()
+                                    val isValid = testGame.playMove(sourcePos, capture_right_position)
+                                    if(isValid){
+                                        moves_possible_by_own_pieces_besides_king.add(capture_right_position)
+                                    }
+                                }
+                            }
+                        }
+                        if(capture_left_position.first in 0..7 && capture_left_position.second in 0..7){
+                            if(chessBoard[capture_left_position.first][capture_left_position.second] != null){
+                                if(chessBoard[capture_left_position.first][capture_left_position.second]!!.color != current_piece.color && chessBoard[capture_left_position.first][capture_left_position.second]!!.type != "king"){
+                                    //moves_possible.add(capture_left_position)
+                                    val testGame = createStalemateChessGame()
+                                    val isValid = testGame.playMove(sourcePos, capture_left_position)
+                                    if(isValid){
+                                        moves_possible_by_own_pieces_besides_king.add(capture_left_position)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else{
+                    val jump_twice_position = Pair(current_piece.position.first + 2, current_piece.position.second)
+                    val jump_once_position = Pair(current_piece.position.first + 1, current_piece.position.second)
+                    val capture_right_position = Pair(current_piece.position.first + 1, current_piece.position.second - 1)
+                    val capture_left_position = Pair(current_piece.position.first + 1, current_piece.position.second + 1)
+
+                    //if Black pawn is in starting row can jump once, jump twice, capture diagonal left, diagonal right (Row 6)
+                    //Cannot capture White King
+                    if(current_piece.position.first == 1){
+                        if(chessBoard[jump_twice_position.first][jump_twice_position.second] == null && chessBoard[jump_once_position.first][jump_once_position.second] == null){
+                            //moves_possible.add(jump_twice_position)
+                            val testGame = createStalemateChessGame()
+                            val isValid = testGame.playMove(sourcePos, jump_twice_position)
+                            if(isValid){
+                                moves_possible_by_own_pieces_besides_king.add(jump_twice_position)
+//                                if(moveCounter > 18 && squareChecker(jump_twice_position)){
+//                                    Log.d("Square Checker", "Check 1 {$jump_twice_position}")
+//                                }
+                            }
+                        }
+                        if(chessBoard[jump_once_position.first][jump_once_position.second] == null){
+                            //moves_possible.add((jump_once_position))
+                            val testGame = createStalemateChessGame()
+                            val isValid = testGame.playMove(sourcePos, jump_once_position)
+                            if(isValid){
+                                moves_possible_by_own_pieces_besides_king.add(jump_once_position)
+//                                if(moveCounter > 18 && squareChecker(jump_once_position)){
+//                                    Log.d("Square Checker", "Check 2 {$jump_once_position}")
+//                                }
+                            }
+                        }
+                        if(capture_right_position.first in 0..7 && capture_right_position.second in 0..7){
+                            if(chessBoard[capture_right_position.first][capture_right_position.second] != null){
+                                if(chessBoard[capture_right_position.first][capture_right_position.second]!!.color != current_piece.color && chessBoard[capture_right_position.first][capture_right_position.second]!!.type != "king"){
+                                    //moves_possible.add(capture_right_position)
+                                    val testGame = createStalemateChessGame()
+                                    val isValid = testGame.playMove(sourcePos, capture_right_position)
+                                    if(isValid){
+                                        moves_possible_by_own_pieces_besides_king.add(capture_right_position)
+//                                        if(moveCounter > 18 && squareChecker(capture_right_position)){
+//                                            Log.d("Square Checker", "Check 3 {$capture_right_position}")
+//                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if(capture_left_position.first in 0..7 && capture_left_position.second in 0..7){
+                            if(chessBoard[capture_left_position.first][capture_left_position.second] != null){
+                                if(chessBoard[capture_left_position.first][capture_left_position.second]!!.color != current_piece.color && chessBoard[capture_left_position.first][capture_left_position.second]!!.type != "king"){
+                                    //moves_possible.add(capture_left_position)
+                                    val testGame = createStalemateChessGame()
+                                    val isValid = testGame.playMove(sourcePos, capture_left_position)
+                                    if(isValid){
+                                        moves_possible_by_own_pieces_besides_king.add(capture_left_position)
+//                                        if(moveCounter > 18 && squareChecker(capture_left_position)){
+//                                            Log.d("Square Checker", "Check 4 {$capture_left_position}")
+//                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    //Possible empassant, jump once, capture left, capture right
+                    else if(current_piece.position.first == 4){
+                        if(chessBoard[jump_once_position.first][jump_once_position.second] == null){
+                            //moves_possible.add((jump_once_position))
+                            val testGame = createStalemateChessGame()
+                            val isValid = testGame.playMove(sourcePos, jump_once_position)
+                            if(isValid){
+                                moves_possible_by_own_pieces_besides_king.add(jump_once_position)
+//                                if(moveCounter > 18 && squareChecker(jump_once_position)){
+//                                    Log.d("Square Checker", "Check 5 {$jump_once_position}")
+//                                }
+                            }
+                        }
+                        val left_neighbor_pos = Pair(current_piece.position.first, current_piece.position.second - 1)
+                        val right_neighbor_pos = Pair(current_piece.position.first, current_piece.position.second + 1)
+
+                        // can both empassant or capture right
+                        if(capture_right_position.first in 0..7 && capture_right_position.second in 0..7){
+                            if(chessBoard[capture_right_position.first][capture_right_position.second] != null){
+                                if(chessBoard[capture_right_position.first][capture_right_position.second]!!.color != current_piece.color && chessBoard[capture_right_position.first][capture_right_position.second]!!.type != "king"){
+                                    //moves_possible.add(capture_right_position)
+                                    val testGame = createStalemateChessGame()
+                                    val isValid = testGame.playMove(sourcePos, capture_right_position)
+                                    if(isValid){
+                                        moves_possible_by_own_pieces_besides_king.add(capture_right_position)
+//                                        if(moveCounter > 18 && squareChecker(capture_right_position)){
+//                                            Log.d("Square Checker", "Check 6 {$capture_right_position}")
+//                                        }
+                                    }
+                                }
+                            }
+                            //capture_right position is null
+                            else{
+                                if(right_neighbor_pos.first in 0..7 && right_neighbor_pos.second in 0 .. 7){
+                                    if(chessBoard[right_neighbor_pos.first][right_neighbor_pos.second] != null){
+                                        if(chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.type == "pawn" && chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.color != current_piece.color){
+                                            if(chessBoard[right_neighbor_pos.first][right_neighbor_pos.second]!!.enpassantMoveFlag == moveCounter){
+                                                //moves_possible.add(capture_right_position)
+                                                val testGame = createStalemateChessGame()
+                                                val isValid = testGame.playMove(sourcePos, capture_right_position)
+                                                if(isValid){
+                                                    moves_possible_by_own_pieces_besides_king.add(capture_right_position)
+//                                                    if(moveCounter > 18 && squareChecker(capture_right_position)){
+//                                                        Log.d("Square Checker", "Check 7 {$capture_right_position}")
+//                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // can both empassant or capture left
+                        if(capture_left_position.first in 0..7 && capture_left_position.second in 0..7){
+                            if(chessBoard[capture_left_position.first][capture_left_position.second] != null){
+                                if(chessBoard[capture_left_position.first][capture_left_position.second]!!.color != current_piece.color && chessBoard[capture_left_position.first][capture_left_position.second]!!.type != "king"){
+                                    //moves_possible.add(capture_left_position)
+                                    val testGame = createStalemateChessGame()
+                                    val isValid = testGame.playMove(sourcePos, capture_left_position)
+                                    if(isValid){
+                                        moves_possible_by_own_pieces_besides_king.add(capture_left_position)
+//                                        if(moveCounter > 18 && squareChecker(capture_left_position)){
+//                                            Log.d("Square Checker", "Check 8 {$capture_left_position}")
+//                                        }
+                                    }
+                                }
+                            }
+                            //capture_left position is null
+                            else{
+                                if(left_neighbor_pos.first in 0..7 && left_neighbor_pos.second in 0 .. 7){
+                                    if(chessBoard[left_neighbor_pos.first][left_neighbor_pos.second] != null){
+                                        if(chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.type == "pawn" && chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.color != current_piece.color){
+                                            if(chessBoard[left_neighbor_pos.first][left_neighbor_pos.second]!!.enpassantMoveFlag == moveCounter){
+                                                //moves_possible.add(capture_left_position)
+                                                val testGame = createStalemateChessGame()
+                                                val isValid = testGame.playMove(sourcePos, capture_left_position)
+                                                if(isValid){
+                                                    moves_possible_by_own_pieces_besides_king.add(capture_left_position)
+//                                                    if(moveCounter > 18 && squareChecker(capture_left_position)){
+//                                                        Log.d("Square Checker", "Check 9 {$capture_left_position}")
+//                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else{
+                        if(chessBoard[jump_once_position.first][jump_once_position.second] == null){
+                            //moves_possible.add((jump_once_position))
+                            val testGame = createStalemateChessGame()
+                            val isValid = testGame.playMove(sourcePos, jump_once_position)
+                            if(isValid){
+                                moves_possible_by_own_pieces_besides_king.add(jump_once_position)
+//                                if(moveCounter > 18 && squareChecker( jump_once_position)){
+//                                    Log.d("Square Checker", "Check 10 {$jump_once_position}")
+//                                }
+                            }
+                        }
+                        if(capture_right_position.first in 0..7 && capture_right_position.second in 0..7){
+                            if(chessBoard[capture_right_position.first][capture_right_position.second] != null){
+                                if(chessBoard[capture_right_position.first][capture_right_position.second]!!.color != current_piece.color && chessBoard[capture_right_position.first][capture_right_position.second]!!.type != "king"){
+                                    //moves_possible.add(capture_right_position)
+                                    val testGame = createStalemateChessGame()
+                                    val isValid = testGame.playMove(sourcePos, capture_right_position)
+                                    if(isValid){
+                                        moves_possible_by_own_pieces_besides_king.add(capture_right_position)
+//                                        if(moveCounter > 18 && squareChecker(capture_right_position)){
+//                                            Log.d("Square Checker", "Check 11 {$capture_right_position}")
+//                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if(capture_left_position.first in 0..7 && capture_left_position.second in 0..7){
+                            if(chessBoard[capture_left_position.first][capture_left_position.second] != null){
+                                if(chessBoard[capture_left_position.first][capture_left_position.second]!!.color != current_piece.color && chessBoard[capture_left_position.first][capture_left_position.second]!!.type != "king"){
+                                    //moves_possible.add(capture_left_position)
+                                    val testGame = createStalemateChessGame()
+                                    val isValid = testGame.playMove(sourcePos, capture_left_position)
+                                    if(isValid){
+                                        moves_possible_by_own_pieces_besides_king.add(capture_left_position)
+//                                        if(moveCounter > 18 && squareChecker(capture_left_position)){
+//                                            Log.d("Square Checker", "Check 12 {$capture_left_position}")
+//                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else if(curPiece.type == "knight"){
+                //Calculating the coordinates of the 8 possible knight jumps
+                val up_left_pos = Pair(current_piece.position.first - 2, current_piece.position.second - 1)
+                val up_right_pos = Pair(current_piece.position.first - 2, current_piece.position.second + 1)
+                val down_right_pos = Pair(current_piece.position.first + 2, current_piece.position.second - 1)
+                val down_left_pos = Pair(current_piece.position.first + 2, current_piece.position.second + 1)
+                val left_down_pos = Pair(current_piece.position.first + 1, current_piece.position.second - 2)
+                val left_up_pos = Pair(current_piece.position.first -1, current_piece.position.second - 2)
+                val right_down_pos = Pair(current_piece.position.first + 1, current_piece.position.second + 2)
+                val right_up_pos = Pair(current_piece.position.first -1, current_piece.position.second + 2)
+
+                val possibleKnightMoves = listOf(
+                    up_left_pos, up_right_pos, down_right_pos, down_left_pos,
+                    left_down_pos, left_up_pos, right_down_pos, right_up_pos
+                )
+
+                val possibleKnightMoves_filtered =
+                    possibleKnightMoves.filter{it.first in 0..7 && it.second in 0..7}.
+                    filter { move ->
+                            val targetSquare = chessBoard[move.first][move.second] // Get piece at target square
+                            targetSquare == null || targetSquare.color != current_piece.color // Keep only if empty or different color piece
+                    }
+
+
+                //moves_possible.addAll(possibleKnightMoves_filtered)
+                for(knight_move in possibleKnightMoves_filtered){
+                    val testGame = createStalemateChessGame()
+                    val isValid = testGame.playMove(sourcePos, knight_move)
+                    if(isValid){
+                        moves_possible_by_own_pieces_besides_king.add(knight_move)
+//                        if(moveCounter > 18 && squareChecker(knight_move)){
+//                            Log.d("Square Checker", "Check 13 {$knight_move}")
+//                        }
+                    }
+                }
+            }
+
+            //own piece is bishop. To block a check you can move to blank square or capture and block.
+            else if(curPiece.type == "bishop"){
+                val possible_moves_list = mutableListOf<Pair<Int, Int>>()
+
+                val cur_row = current_piece.position.first
+                val cur_col = current_piece.position.second
+
+
+                //NE Direction: Row # decrease, column # increases
+                var row_NE = cur_row - 1
+                var col_NE = cur_col + 1
+
+                while(row_NE >= 0 && col_NE <= 7){
+                    //Next square is a blank space
+                    if(chessBoard[row_NE][col_NE] == null){
+                        possible_moves_list.add(Pair(row_NE, col_NE))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[row_NE][col_NE]!!.color == current_piece!!.color){
+                            break
+                        }
+                        // next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if next square is an enemey piece that is not king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[row_NE][col_NE]!!.type != "king"){
+                                possible_moves_list.add(Pair(row_NE, col_NE))
+                            }
+                            break
+                        }
+                    }
+                    row_NE -= 1
+                    col_NE += 1
+                }
+
+
+                //SE Direction: Row # increases, column # increases
+                var row_SE = cur_row + 1
+                var col_SE = cur_col + 1
+
+                while(row_SE <= 7 && col_SE <= 7){
+                    //Next square is a blank space
+                    if(chessBoard[row_SE][col_SE] == null){
+                        possible_moves_list.add(Pair(row_SE, col_SE))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[row_SE][col_SE]!!.color == current_piece!!.color){
+                            break
+                        }
+                        // next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if next square is an enemey piece that is not king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[row_SE][col_SE]!!.type != "king"){
+                                possible_moves_list.add(Pair(row_SE, col_SE))
+                            }
+                            break
+                        }
+                    }
+                    row_SE += 1
+                    col_SE += 1
+                }
+
+                //NW Direction: Row # decreases, column # decreases
+                var row_NW = cur_row - 1
+                var col_NW = cur_col - 1
+
+                while(row_NW >= 0 && col_NW >= 0){
+                    //Next square is a blank space
+                    if(chessBoard[row_NW][col_NW] == null){
+                        possible_moves_list.add(Pair(row_NW, col_NW))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[row_NW][col_NW]!!.color == current_piece!!.color){
+                            break
+                        }
+                        // next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if next square is an enemey piece that is not king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[row_NW][col_NW]!!.type != "king"){
+                                possible_moves_list.add(Pair(row_NW, col_NW))
+                            }
+                            break
+                        }
+                    }
+                    row_NW -= 1
+                    col_NW -= 1
+                }
+
+
+                //SW Direction: Row # increases, column # decreases
+                var row_SW = cur_row + 1
+                var col_SW = cur_col - 1
+
+                while(row_SW <= 7 && col_SW >=0){
+                    //Next square is a blank space
+                    if(chessBoard[row_SW][col_SW] == null){
+                        possible_moves_list.add(Pair(row_SW, col_SW))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[row_SW][col_SW]!!.color == current_piece!!.color){
+                            break
+                        }
+                        // next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if next square is an enemey piece that is not king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[row_SW][col_SW]!!.type != "king"){
+                                possible_moves_list.add(Pair(row_SW, col_SW))
+                            }
+                            break
+                        }
+                    }
+
+                    row_SW += 1
+                    col_SW -= 1
+                }
+
+                //moves_possible.addAll(possible_moves_list)
+                for(bishop_move in possible_moves_list){
+                    val testGame = createStalemateChessGame()
+                    val isValid = testGame.playMove(sourcePos, bishop_move)
+                    if(isValid){
+                        moves_possible_by_own_pieces_besides_king.add(bishop_move)
+//                        if(moveCounter > 18 && squareChecker(bishop_move)){
+//                            Log.d("Square Checker", "Check 14 {$bishop_move}")
+//                        }
+                    }
+                }
+            }
+
+            //own piece is rook. To block a check you can move to a blank square or capture and block
+            else if(curPiece.type == "rook"){
+                val possible_moves_list = mutableListOf<Pair<Int, Int>>()
+
+                val cur_row = current_piece.position.first
+                val cur_col = current_piece.position.second
+
+                //North Direction (Row # decreases column stays the same)
+                var nextsquare_northrow = cur_row - 1
+
+                //Make Sure while loop condition changes at the end
+                while (nextsquare_northrow >= 0){
+                    //if the next square is empty add to possible move  //(Move to Blank Square)
+                    if(chessBoard[nextsquare_northrow][cur_col] == null){
+                        possible_moves_list.add(Pair(nextsquare_northrow, cur_col))
+                    }
+
+                    //if next square is not null
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[nextsquare_northrow][cur_col]!!.color == current_piece!!.color){
+                            break
+                        }
+                        //next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if the next square is an enemy piece that is not the king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[nextsquare_northrow][cur_col]!!.type != "king"){
+                                possible_moves_list.add(Pair(nextsquare_northrow, cur_col))
+                            }
+                            break
+                        }
+                    }
+                    nextsquare_northrow -= 1
+                }
+
+                //South Direction
+                var nextsquare_southrow = cur_row + 1
+
+                while(nextsquare_southrow <= 7){
+                    //Next square is blank space
+                    if(chessBoard[nextsquare_southrow][cur_col] == null){
+                        possible_moves_list.add(Pair(nextsquare_southrow, cur_col))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[nextsquare_southrow][cur_col]!!.color == current_piece!!.color){
+                            break
+                        }
+                        //next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if the next square is an enemy piece that is not the king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[nextsquare_southrow][cur_col]!!.type != "king"){
+                                possible_moves_list.add(Pair(nextsquare_southrow, cur_col))
+                            }
+                            break
+                        }
+                    }
+                    nextsquare_southrow += 1
+                }
+
+                //West Direction
+                var nextsquare_westcol = cur_col - 1
+
+                while(nextsquare_westcol >= 0){
+                    //Next square is a blank space
+                    if(chessBoard[cur_row][nextsquare_westcol] == null){
+                        possible_moves_list.add(Pair(cur_row, nextsquare_westcol))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[cur_row][nextsquare_westcol]!!.color == current_piece!!.color){
+                            break
+                        }
+                        // next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if next square is an enemey piece that is not king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[cur_row][nextsquare_westcol]!!.type != "king"){
+                                possible_moves_list.add(Pair(cur_row, nextsquare_westcol))
+                            }
+                            break
+                        }
+                    }
+                    nextsquare_westcol -= 1
+                }
+
+                //East Direction
+                var nextsquare_eastcol = cur_col + 1
+
+                while(nextsquare_eastcol <= 7){
+                    //Next square is a blank space
+                    if(chessBoard[cur_row][nextsquare_eastcol] == null){
+                        possible_moves_list.add(Pair(cur_row, nextsquare_eastcol))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[cur_row][nextsquare_eastcol]!!.color == current_piece!!.color){
+                            break
+                        }
+                        // next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if next square is an enemey piece that is not king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[cur_row][nextsquare_eastcol]!!.type != "king"){
+                                possible_moves_list.add(Pair(cur_row, nextsquare_eastcol))
+                            }
+                            break
+                        }
+                    }
+                    nextsquare_eastcol += 1
+                }
+
+                //moves_possible.addAll(possible_moves_list)
+
+                for(rook_move in possible_moves_list){
+                    val testGame = createStalemateChessGame()
+                    val isValid = testGame.playMove(sourcePos, rook_move)
+                    if(isValid){
+                        moves_possible_by_own_pieces_besides_king.add(rook_move)
+//                        if(moveCounter > 18 && squareChecker(rook_move)){
+//                            Log.d("Square Checker", "Check 15 {$rook_move}")
+//                        }
+                    }
+                }
+            }
+
+            //current piece is queen. To block a check you can move to a blank square or capture and block
+            else if(curPiece.type == "queen"){
+                val possible_moves_list = mutableListOf<Pair<Int, Int>>()
+                val cur_row = current_piece.position.first
+                val cur_col = current_piece.position.second
+
+
+                //***Queen is a combination of Rook and Bishop ***//
+                //***Same Code as Rook***
+                //North Direction (Row # decreases column stays the same)
+                var nextsquare_northrow = cur_row - 1
+
+                //Make Sure while loop condition changes at the end
+                while (nextsquare_northrow >= 0){
+                    //if the next square is empty add to possible move  //(Move to Blank Square)
+                    if(chessBoard[nextsquare_northrow][cur_col] == null){
+                        possible_moves_list.add(Pair(nextsquare_northrow, cur_col))
+                    }
+
+                    //if next square is not null
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[nextsquare_northrow][cur_col]!!.color == current_piece!!.color){
+                            break
+                        }
+                        //next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if the next square is an enemy piece that is not the king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[nextsquare_northrow][cur_col]!!.type != "king"){
+                                possible_moves_list.add(Pair(nextsquare_northrow, cur_col))
+                            }
+                            break
+                        }
+                    }
+                    nextsquare_northrow -= 1
+                }
+
+                //South Direction
+                var nextsquare_southrow = cur_row + 1
+
+                while(nextsquare_southrow <= 7){
+                    //Next square is blank space
+                    if(chessBoard[nextsquare_southrow][cur_col] == null){
+                        possible_moves_list.add(Pair(nextsquare_southrow, cur_col))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[nextsquare_southrow][cur_col]!!.color == current_piece!!.color){
+                            break
+                        }
+                        //next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if the next square is an enemy piece that is not the king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[nextsquare_southrow][cur_col]!!.type != "king"){
+                                possible_moves_list.add(Pair(nextsquare_southrow, cur_col))
+                            }
+                            break
+                        }
+                    }
+                    nextsquare_southrow += 1
+                }
+
+                //West Direction
+                var nextsquare_westcol = cur_col - 1
+
+                while(nextsquare_westcol >= 0){
+                    //Next square is a blank space
+                    if(chessBoard[cur_row][nextsquare_westcol] == null){
+                        possible_moves_list.add(Pair(cur_row, nextsquare_westcol))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[cur_row][nextsquare_westcol]!!.color == current_piece!!.color){
+                            break
+                        }
+                        // next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if next square is an enemey piece that is not king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[cur_row][nextsquare_westcol]!!.type != "king"){
+                                possible_moves_list.add(Pair(cur_row, nextsquare_westcol))
+                            }
+                            break
+                        }
+                    }
+                    nextsquare_westcol -= 1
+                }
+
+                //East Direction
+                var nextsquare_eastcol = cur_col + 1
+
+                while(nextsquare_eastcol <= 7){
+                    //Next square is a blank space
+                    if(chessBoard[cur_row][nextsquare_eastcol] == null){
+                        possible_moves_list.add(Pair(cur_row, nextsquare_eastcol))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[cur_row][nextsquare_eastcol]!!.color == current_piece!!.color){
+                            break
+                        }
+                        // next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if next square is an enemey piece that is not king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[cur_row][nextsquare_eastcol]!!.type != "king"){
+                                possible_moves_list.add(Pair(cur_row, nextsquare_eastcol))
+                            }
+                            break
+                        }
+                    }
+                    nextsquare_eastcol += 1
+                }
+
+
+                //***Queen is a combination of Rook and Bishop ***//
+                //***Same Code as Bishop***
+                //NE Direction: Row # decrease, column # increases
+                var row_NE = cur_row - 1
+                var col_NE = cur_col + 1
+
+                while(row_NE >= 0 && col_NE <= 7){
+                    //Next square is a blank space
+                    if(chessBoard[row_NE][col_NE] == null){
+                        possible_moves_list.add(Pair(row_NE, col_NE))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[row_NE][col_NE]!!.color == current_piece!!.color){
+                            break
+                        }
+                        // next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if next square is an enemey piece that is not king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[row_NE][col_NE]!!.type != "king"){
+                                possible_moves_list.add(Pair(row_NE, col_NE))
+                            }
+                            break
+                        }
+                    }
+                    row_NE -= 1
+                    col_NE += 1
+                }
+
+
+                //SE Direction: Row # increases, column # increases
+                var row_SE = cur_row + 1
+                var col_SE = cur_col + 1
+
+                while(row_SE <= 7 && col_SE <= 7){
+                    //Next square is a blank space
+                    if(chessBoard[row_SE][col_SE] == null){
+                        possible_moves_list.add(Pair(row_SE, col_SE))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[row_SE][col_SE]!!.color == current_piece!!.color){
+                            break
+                        }
+                        // next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if next square is an enemey piece that is not king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[row_SE][col_SE]!!.type != "king"){
+                                possible_moves_list.add(Pair(row_SE, col_SE))
+                            }
+                            break
+                        }
+                    }
+                    row_SE += 1
+                    col_SE += 1
+                }
+
+                //NW Direction: Row # decreases, column # decreases
+                var row_NW = cur_row - 1
+                var col_NW = cur_col - 1
+
+                while(row_NW >= 0 && col_NW >= 0){
+                    //Next square is a blank space
+                    if(chessBoard[row_NW][col_NW] == null){
+                        possible_moves_list.add(Pair(row_NW, col_NW))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[row_NW][col_NW]!!.color == current_piece!!.color){
+                            break
+                        }
+                        // next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if next square is an enemey piece that is not king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[row_NW][col_NW]!!.type != "king"){
+                                possible_moves_list.add(Pair(row_NW, col_NW))
+                            }
+                            break
+                        }
+                    }
+                    row_NW -= 1
+                    col_NW -= 1
+                }
+
+
+                //SW Direction: Row # increases, column # decreases
+                var row_SW = cur_row + 1
+                var col_SW = cur_col - 1
+
+                while(row_SW <= 7 && col_SW >=0){
+                    //Next square is a blank space
+                    if(chessBoard[row_SW][col_SW] == null){
+                        possible_moves_list.add(Pair(row_SW, col_SW))
+                    }
+                    //Next square is not a blank space
+                    else{
+                        // if next square is occupied by the same color piece stop expansion
+                        if(chessBoard[row_SW][col_SW]!!.color == current_piece!!.color){
+                            break
+                        }
+                        // next square is occupied by a different color piece: Potential Capture and Stop Expansion
+                        else{
+                            //if next square is an enemey piece that is not king add to possible list of moves. Cannot capture enemy King
+                            if(chessBoard[row_SW][col_SW]!!.type != "king"){
+                                possible_moves_list.add(Pair(row_SW, col_SW))
+                            }
+                            break
+                        }
+                    }
+
+                    row_SW += 1
+                    col_SW -= 1
+                }
+
+                //moves_possible.addAll(possible_moves_list)
+                for(queen_move in possible_moves_list){
+                    val testGame = createStalemateChessGame()
+                    val isValid = testGame.playMove(sourcePos, queen_move)
+                    if(isValid){
+                        moves_possible_by_own_pieces_besides_king.add(queen_move)
+//                        if(moveCounter > 18 && squareChecker(queen_move)){
+//                            Log.d("Square Checker", "Check 16 {$queen_move}")
+//                        }
+                    }
+                }
+            }
+
+            //enemy piece is king don't do anything we already checked possible moves by king
+            else{
+
+            }
+        }
+
+        return moves_possible_by_own_pieces_besides_king
+    }
     fun is_opposing_king_in_checkmate() : Boolean {
 
         //squares attacked by curplayer does contain duplicates as we will use this later
@@ -225,7 +1280,7 @@ class VirtualChessGame {
     }
 
     //Remember not to include enemy king move possible
-    //Can block with pawn, rook, queen, king, or knight
+    //Can block with pawn, rook, queen, bishop, or knight
     fun moves_possible_by_enemy_pieces(): List<Pair<Int, Int>> {
 
         val moves_possible = mutableListOf<Pair<Int, Int>>()
@@ -275,14 +1330,14 @@ class VirtualChessGame {
                         val left_neighbor_pos = Pair(current_piece.position.first, current_piece.position.second - 1)
                         val right_neighbor_pos = Pair(current_piece.position.first, current_piece.position.second + 1)
 
-                        // can both empassant or capture right
+                        // can both empassant or capture right. Capture to right
                         if(capture_right_position.first in 0..7 && capture_right_position.second in 0..7){
                             if(chessBoard[capture_right_position.first][capture_right_position.second] != null){
                                 if(chessBoard[capture_right_position.first][capture_right_position.second]!!.color != current_piece.color && chessBoard[capture_right_position.first][capture_right_position.second]!!.type != "king"){
                                     moves_possible.add(capture_right_position)
                                 }
                             }
-                            //capture_right position is null
+                            //else{} capture_right position is null. empassant to right
                             else{
                                 if(right_neighbor_pos.first in 0..7 && right_neighbor_pos.second in 0 .. 7){
                                     if(chessBoard[right_neighbor_pos.first][right_neighbor_pos.second] != null){
@@ -296,14 +1351,14 @@ class VirtualChessGame {
                             }
                         }
 
-                        // can both empassant or capture left
+                        // can both empassant or capture left. Capture to left
                         if(capture_left_position.first in 0..7 && capture_left_position.second in 0..7){
                             if(chessBoard[capture_left_position.first][capture_left_position.second] != null){
                                 if(chessBoard[capture_left_position.first][capture_left_position.second]!!.color != current_piece.color && chessBoard[capture_left_position.first][capture_left_position.second]!!.type != "king"){
                                     moves_possible.add(capture_left_position)
                                 }
                             }
-                            //capture_left position is null
+                            //else{}capture_left position is null. empassant to left
                             else{
                                 if(left_neighbor_pos.first in 0..7 && left_neighbor_pos.second in 0 .. 7){
                                     if(chessBoard[left_neighbor_pos.first][left_neighbor_pos.second] != null){
@@ -458,7 +1513,11 @@ class VirtualChessGame {
                 )
 
                 val possibleKnightMoves_filtered = possibleKnightMoves.filter {it.first in 0..7 && it.second in 0..7}
-
+                //** INTERESTING ERROR here, I did not account if knight is moving to
+                //blank square, occupied square by same color piece, or occupied square by different color piece
+                //Interestingly enough for the purpose that this function is used for, to see if
+                //the piece can block the checking path, it doesn't matter, but for the stalemate function it matters
+                //because a knight cannot move to an occupied square of the same color
                 moves_possible.addAll(possibleKnightMoves_filtered)
             }
 
