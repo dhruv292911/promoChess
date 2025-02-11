@@ -1,78 +1,9 @@
-<LinearLayout
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.fragment.app.FragmentContainerView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/fragment_container"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical|center_horizontal"
-        android:padding="16dp">
-
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/white_king"
-            android:layout_gravity="start"
-            android:layout_marginEnd="8dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Promo Chess"
-            android:textSize="22sp"
-            android:textColor="#000000"/>
-
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/black_king"
-            android:layout_gravity="end"
-            android:layout_marginStart="8dp"/>
-    </LinearLayout>
-
-    <!-- Empty LinearLayout with 200dp height -->
-    <!-- this can be my horizontal recycler view to show the game states!-->
-
-
-
-<!--    <LinearLayout-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="125dp"-->
-<!--        android:orientation="vertical"/>-->
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/moveHistoryRecyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="125dp"
-        android:orientation="horizontal"
-        android:layout_marginBottom="8dp"
-        tools:listitem="@layout/item_move_snapshot"/>
-
-    <GridLayout
-        android:id="@+id/chessboard"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:columnCount="8"
-        android:rowCount="8"/>
-    <!-- New Game Button -->
-    <Button
-        android:id="@+id/new_game_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:text="New Game"/>
-
-    <!-- Dynamic TextView -->
-    <TextView
-        android:id="@+id/game_over_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:textSize="18sp"
-        android:textColor="#FF0000"
-        android:textAlignment="center"/>
-
-</LinearLayout>
+    android:layout_height="match_parent"
+    android:name="com.example.promochess.HomeFragment"
+    tools:layout="@layout/fragment_home" />
