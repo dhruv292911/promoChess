@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.promochess.HomeFragment"
+        android:label="Home">
+        <action
+            android:id="@+id/action_homeFragment_to_onlinePlayFragment"
+            app:destination="@id/onlinePlayFragment"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/onlinePlayFragment"
+        android:name="com.example.promochess.OnlinePlayFragment"
+        android:label="Online Play">
+        <action
+            android:id="@+id/action_onlinePlayFragment_to_homeFragment"
+            app:destination="@id/homeFragment"/>
+    </fragment>
+
+</navigation>

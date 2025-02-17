@@ -79,4 +79,13 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-database-ktx")
+    implementation 'com.firebaseui:firebase-ui-auth:8.0.2'
+
+
+    //Adding navigation to my gradle file
+    
+    def nav_version = "2.8.7" // Use latest version
+
+    implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
+    implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
 }

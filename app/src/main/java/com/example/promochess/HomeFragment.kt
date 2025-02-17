@@ -1,5 +1,7 @@
 package com.example.promochess
 
+import android.app.Activity
+import android.app.Activity.RESULT_OK
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -15,8 +17,17 @@ import androidx.activity.viewModels
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.promochess.databinding.FragmentHomeBinding
+import com.example.promochess.databinding.FragmentHomeBinding //this is important this is how we use view binding
 
+//Import all the firebase libraries
+import com.firebase.ui.auth.AuthUI
+import com.firebase.ui.auth.IdpResponse
+import com.google.firebase.auth.FirebaseAuth
+
+import android.content.Intent
+import androidx.navigation.fragment.findNavController
+import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
+import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
@@ -41,6 +52,29 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!  // Ensures binding is non-null when accessed
+
+
+
+    //AUTH REQUEST CODE for Firebase Auth
+    private val AUTH_REQUEST_CODE = 1234
+    //Firebase Login
+    private val signInLauncher =
+        registerForActivityResult(FirebaseAuthUIActivityResultContract()) { result ->
+            val response = result.idpResponse
+            if (result.resultCode == Activity.RESULT_OK) {
+                // Successfully signed in
+                val user = FirebaseAuth.getInstance().currentUser
+                Toast.makeText(requireContext(), "Welcome, ${user?.email}!", Toast.LENGTH_SHORT).show()
+
+                // Navigate to OnlinePlayFragment
+                findNavController().navigate(R.id.action_homeFragment_to_onlinePlayFragment)
+
+            } else {
+                // Sign-in failed
+                Toast.makeText(requireContext(), "Login failed: ${response?.error?.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+
 
 
     override fun onCreateView(
@@ -758,11 +792,48 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             // Notify the adapter that all items have been removed
             moveHistoryAdapter.notifyDataSetChanged()
         }
+
+        binding.onlinePlayButton.setOnClickListener {
+            launchFirebaseLogin()
+
+//            FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
+//                .addOnCompleteListener { task ->
+//                    if (task.isSuccessful) {
+//                        val user = FirebaseAuth.getInstance().currentUser
+//                        Toast.makeText(requireContext(), "Welcome, ${user?.email}!", Toast.LENGTH_SHORT).show()
+//                    } else {
+//                        Toast.makeText(requireContext(), "Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+//                    }
+//                }
+        }
     }
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null  // Avoid memory leaks
     }
+
+    private fun launchFirebaseLogin() {
+        val providers = arrayListOf(
+            AuthUI.IdpConfig.EmailBuilder().build()
+        )
+
+        // Create and launch sign-in intent
+        // XXX Write me. Set authentication providers and start sign-in for user
+        signInLauncher.launch(
+            AuthUI.getInstance()
+                .createSignInIntentBuilder()
+                .setAvailableProviders(providers)
+                .setIsSmartLockEnabled(false)
+                .build()
+            )
+            // setIsSmartLockEnabled(false) solves some problems
+
+            //DISABLE EMAIL ENUMERATION, (To show password option when trying to login with existing user) in Firebase Console
+            //***//https://github.com/firebase/firebaseui-web/issues/1040***
+    }
+
+
+
 
     private fun handleSquareClick(row: Int, column: Int) {
         if (sourcePosition == null) {
